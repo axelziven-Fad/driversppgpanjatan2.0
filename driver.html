@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <title>Controller & Driver SPPG</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        body { margin: 0; font-family: 'Fredoka', sans-serif; background-color: #f4f6f9; }
+        
+        .header {
+            background-color: #1565C0; color: white; padding: 15px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;
+        }
+        .header h1 { margin: 0; font-size: 18px; }
+        
+        .admin-panel {
+            background: white; margin: 10px; padding: 15px; border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; justify-content: space-around;
+        }
+        .btn {
+            padding: 10px 15px; border: none; border-radius: 8px; font-weight: bold; 
+            font-family: inherit; cursor: pointer; color: white; width: 45%; text-align: center;
+        }
+        .btn-excel { background: #27ae60; }
+        .btn-reset { background: #c0392b; }
+
+        .driver-selector {
+            background: white; margin: 10px; padding: 15px; border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center;
+        }
+        .car-btn {
+            display: inline-block; width: 40%; padding: 15px 5px; margin: 5px;
+            border-radius: 10px; font-weight: bold; border: 2px solid #1565C0;
+            background: white; color: #1565C0; cursor: pointer; transition: 0.3s;
+        }
+        .car-btn.active { background: #1565C0; color: white; }
+        .car-btn.disabled { background: #e0e0e0; border-color: #9e9e9e; color: #9e9e9e; cursor: not-allowed; }
+
+        #status-panel { margin: 10px; padding: 15px; border-radius: 12px; background: #e8f5e9; display: none; }
+        
+        /* Mini Map Mirroring */
+        #map { height: 250px; margin: 10px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .emoji-icon { font-size: 20px; text-align: center; line-height: 1; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>⚙️ SPPG Controller / Driver</h1>
+        <small id="wake-status">Layar disetel agar tidak mati otomatis</small>
+    </div>
+
+    <div class="admin-panel">
+        <button class="btn btn-excel" onclick="downloadExcel()">📊 Tarik Excel</button>
+        <button class="btn btn-reset" onclick="hapusArmadaAktif()">🗑️ Reset Armada</button>
+    </div>
+
+    <div class="driver-selector" id="login-panel">
+        <h3>Pilih Kendaraan Anda:</h3>
+        <button class="car-btn" id="btn-mobil1" onclick="mulaiJalan('Mobil 1')">🚚 Mobil 1</button>
+        <button class="car-btn" id="btn-mobil2" onclick="mulaiJalan('Mobil 2')">🚚 Mobil 2</button>
+        <p style="font-size: 11px; color: #666; margin-top: 10px;">Jika tombol abu-abu, berarti mobil sedang dipakai.</p>
+    </div>
+
+    <div id="status-panel">
+        <h3 style="margin:0; color:#2e7d32;">✅ Anda sedang bertugas!</h3>
+        <p>Nama: <b id="my-car-name">-</b></p>
+        <p>Status GPS: <span id="gps-status" style="color:#d32f2f; font-weight:bold;">Mencari sinyal...</span></p>
+        <button onclick="berhentiTugas()" style="width:100%; padding:10px; background:#d32f2f; color:white; border:none; border-radius:8px; font-weight:bold;">🛑 Selesai Tugas</button>
+    </div>
+
+    <h4 style="margin-left: 15px; margin-bottom: 0;">🗺️ Pantauan Armada Aktif</h4>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // 🔥 KONFIGURASI FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyAXnmhUbBBZv7as33EXqKMVhmWsv1s0S9Y",
+            authDomain: "sppg-tracker.firebaseapp.com",
+            databaseURL: "https://sppg-tracker-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "sppg-tracker",
+            storageBucket: "sppg-tracker.firebasestorage.app",
+            messagingSenderId: "583689454613",
+            appId: "1:583689454613:web:24e9441df31b9e3d5e3a1c"
+        };
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // 🏫 DATA SEKOLAH (MAN 2 Wates -> MAN 2 Kulon Progo)
+        const sekolahList = [
+            { nama: "KB SADEWA CERME", lat: -7.8958782, lng: 110.1775952 },
+            { nama: "KB PREGIWATI", lat: -7.8847537, lng: 110.1663259 },
+            { nama: "KB SADEWO", lat: -7.8958400, lng: 110.1774863 },
+            { nama: "KB BAYU SETO", lat: -7.8967954, lng: 110.1620361 }, 
+            { nama: "KB EDELWEIS", lat: -7.8765058, lng: 110.1867856 },
+            { nama: "KB NAKULA SADEWA", lat: -7.8982101, lng: 110.1898657 },
+            { nama: "KB MASITA", lat: -7.8846430, lng: 110.1816280 },
+            { nama: "KB TUNAS TIRTO", lat: -7.9244000, lng: 110.1817000 },
+            { nama: "KB CITRA GAMI", lat: -7.9110322, lng: 110.1939914 },
+            { nama: "TK ABA CABEAN", lat: -7.9137737, lng: 110.1922567 },
+            { nama: "RA MASYITOH GOTAKAN", lat: -7.8847933, lng: 110.1662309 },
+            { nama: "RA ZAID BIN SABIT", lat: -7.8998072, lng: 110.1682897 },
+            { nama: "TK PKK PUSPITORINI", lat: -7.8958400, lng: 110.1774863 },
+            { nama: "TK ABA DUKUH", lat: -7.8766542, lng: 110.1867416 },
+            { nama: "TK PKK KARTINI", lat: -7.8978904, lng: 110.1901404 },
+            { nama: "TK MASITA", lat: -7.8846299, lng: 110.1816313 },
+            { nama: "TK MASYITOH MAESAN", lat: -7.9243861, lng: 110.1960140 },
+            { nama: "TK ABA PERENG", lat: -7.9020787, lng: 110.2047730 },
+            { nama: "TK ABA SUNGAPAN", lat: -7.9264798, lng: 110.1810969 },
+            { nama: "TK PKK MELATI KEMENDUNG", lat: -7.8891136, lng: 110.1687127 },
+            { nama: "SD N DUKUH", lat: -7.8766854, lng: 110.1860619 },
+            { nama: "SD N KEMBANG MALANG", lat: -7.8955791, lng: 110.1771435 },
+            { nama: "SD UNGGULAN MUH KREMBANGAN", lat: -7.8862298, lng: 110.1833212 },
+            { nama: "SD N KEMENDUNG", lat: -7.8983878, lng: 110.1666515 },
+            { nama: "SD N KREMBANGAN", lat: -7.8962851, lng: 110.1883280 },
+            { nama: "SD N 1 DEPOK", lat: -7.9107935, lng: 110.1587187 },
+            { nama: "SD N KEPUH", lat: -7.8932589, lng: 110.1830488 },
+            { nama: "SD N 3 SUNGAPAN", lat: -7.9282203, lng: 110.1797436 },
+            { nama: "MI ZAID BIN SABIT GOTAKAN", lat: -7.8998072, lng: 110.1682897 },
+            { nama: "MAN 2 Kulon Progo", lat: -7.8844263, lng: 110.1535834 } // <--- UPDATE NAMA
+        ];
+
+        // 📍 SETUP MINI MAP
+        const map = L.map('map').setView([-7.907354, 110.169152], 12); 
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        let markers = {};
+        const iconMobil = L.divIcon({ className: 'emoji-icon', html: '🚚', iconSize: [20, 20] });
+
+        // VARIABEL DRIVER
+        let myCar = null;
+        let watchId = null;
+        let potentialCheckins = {}; 
+        let reportedSessions = {};
+        let wakeLock = null;
+
+        // 🚀 FITUR WAKE LOCK (BIAR LAYAR GAK MATI SAAT JALAN)
+        async function keepScreenAwake() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    document.getElementById('wake-status').innerText = "☀️ Layar dikunci menyala";
+                }
+            } catch (err) { console.log("Wake Lock error:", err); }
+        }
+
+        // 🔄 CEK STATUS MOBIL (LOGIC 2 MOBIL)
+        database.ref('drivers').on('value', (snapshot) => {
+            const data = snapshot.val() || {};
+            
+            // Atur tombol Mobil 1
+            if (data['Mobil 1'] && myCar !== 'Mobil 1') {
+                document.getElementById('btn-mobil1').classList.add('disabled');
+                document.getElementById('btn-mobil1').innerText = "🚫 Dipakai";
+            } else {
+                document.getElementById('btn-mobil1').classList.remove('disabled');
+                document.getElementById('btn-mobil1').innerText = "🚚 Mobil 1";
+            }
+
+            // Atur tombol Mobil 2
+            if (data['Mobil 2'] && myCar !== 'Mobil 2') {
+                document.getElementById('btn-mobil2').classList.add('disabled');
+                document.getElementById('btn-mobil2').innerText = "🚫 Dipakai";
+            } else {
+                document.getElementById('btn-mobil2').classList.remove('disabled');
+                document.getElementById('btn-mobil2').innerText = "🚚 Mobil 2";
+            }
+
+            // Peta Mirroring
+            for(var name in markers) { map.removeLayer(markers[name]); }
+            markers = {};
+            Object.values(data).forEach(driver => {
+                if(driver.lat && driver.lng) {
+                    markers[driver.nama] = L.marker([driver.lat, driver.lng], {icon: iconMobil})
+                        .bindTooltip(driver.nama, {permanent: true, direction: 'right'})
+                        .addTo(map);
+                }
+            });
+        });
+
+        // 🚙 MULAI BERTUGAS (GEOFENCING HANYA BERJALAN DI SINI!)
+        function mulaiJalan(namaMobil) {
+            if(document.getElementById(`btn-${namaMobil.replace(' ','').toLowerCase()}`).classList.contains('disabled')) {
+                Swal.fire('Penuh', `${namaMobil} sedang digunakan perangkat lain!`, 'error');
+                return;
+            }
+
+            myCar = namaMobil;
+            document.getElementById('login-panel').style.display = 'none';
+            document.getElementById('status-panel').style.display = 'block';
+            document.getElementById('my-car-name').innerText = myCar;
+            
+            keepScreenAwake(); // Nyalakan penahan layar
+
+            // Mulai Pantau GPS secara spesifik untuk HP ini
+            if (navigator.geolocation) {
+                watchId = navigator.geolocation.watchPosition(
+                    (position) => {
+                        let lat = position.coords.latitude;
+                        let lng = position.coords.longitude;
+                        document.getElementById('gps-status').innerText = `Terhubung (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                        document.getElementById('gps-status').style.color = '#2e7d32';
+
+                        // 1. Update ke Firebase
+                        const now = new Date();
+                        const timeStr = now.getHours().toString().padStart(2,0) + ':' + now.getMinutes().toString().padStart(2,0);
+                        database.ref('drivers/' + myCar).update({
+                            nama: myCar, lat: lat, lng: lng, updateTerakhir: timeStr, rute: ["SD N KREMBANGAN", "KB SADEWA"] // <-- Simulasi Muatan
+                        });
+
+                        // 2. JALANKAN GEOFENCING LOKAL UNTUK MOBIL INI SAJA
+                        prosesGeofencingLokal(lat, lng);
+                    },
+                    (error) => { document.getElementById('gps-status').innerText = "Error GPS: " + error.message; },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                );
+            }
+        }
+
+        function berhentiTugas() {
+            if(watchId) navigator.geolocation.clearWatch(watchId);
+            if(wakeLock) wakeLock.release();
+            database.ref('drivers/' + myCar).remove(); // Hapus dari database
+            window.location.reload(); // Refresh app
+        }
+
+        // ==========================================
+        // 📍 LOGIKA GEOFENCING ARSITEKTUR BARU (DI SISI DRIVER)
+        // ==========================================
+        function prosesGeofencingLokal(lat, lng) {
+            sekolahList.forEach(sekolah => {
+                let dist = getDistanceFromLatLonInKm(lat, lng, sekolah.lat, sekolah.lng);
+                const sessionKey = `${myCar}_${sekolah.nama}`;
+                
+                if (dist <= 0.10) { // 100 Meter
+                    const now = new Date().getTime();
+                    if (reportedSessions[sessionKey] && (now - reportedSessions[sessionKey] < 3600000)) return;
+
+                    if (!potentialCheckins[sessionKey]) {
+                        potentialCheckins[sessionKey] = now;
+                    } else {
+                        const duration = now - potentialCheckins[sessionKey];
+                        if (duration > 90000) { // 90 Detik
+                            pushAutoReport(sekolah.nama);
+                            reportedSessions[sessionKey] = now;
+                            delete potentialCheckins[sessionKey];
+                            
+                            Swal.fire({
+                                toast: true, position: 'top', showConfirmButton: false, timer: 3000,
+                                icon: 'success', title: `Laporan Tiba di ${sekolah.nama} Terkirim!`
+                            });
+                        }
+                    }
+                } else {
+                    if (potentialCheckins[sessionKey]) delete potentialCheckins[sessionKey];
+                }
+            });
+        }
+
+        function pushAutoReport(sekolahName) {
+            const today = new Date();
+            const dateStr = today.getDate().toString().padStart(2,0) + '/' + (today.getMonth()+1).toString().padStart(2,0) + '/' + today.getFullYear();
+            const timeStr = today.getHours().toString().padStart(2,0) + ':' + today.getMinutes().toString().padStart(2,0);
+
+            database.ref('reports').push({
+                driver: myCar, sekolah: sekolahName, jam: timeStr + " (Auto)", tanggal: dateStr, timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+        }
+
+        // 🛠️ FUNGSI ADMIN (Sama persis kayak sebelumnya)
+        function hapusArmadaAktif() {
+            Swal.fire({ title: 'Password Admin:', input: 'password', showCancelButton: true, preConfirm: (p) => { if(p!=="SPPGjaya") Swal.showValidationMessage('Salah!'); } })
+            .then((r) => { if(r.isConfirmed) { database.ref('drivers').remove(); Swal.fire('Terhapus!','','success'); } });
+        }
+        function downloadExcel() {
+            Swal.fire({ title: 'Password Admin:', input: 'password', showCancelButton: true, preConfirm: (p) => { if(p!=="hallo Sayang") Swal.showValidationMessage('Salah!'); } })
+            .then((res) => {
+                if(res.isConfirmed) {
+                    database.ref('reports').once('value').then((snapshot) => {
+                        const reports = snapshot.val();
+                        if(!reports) return Swal.fire('Kosong','','info');
+                        let dataExcel = []; let no = 1;
+                        Object.values(reports).forEach(r => dataExcel.push({"No": no++, "Driver": r.driver, "Sekolah": r.sekolah, "Jam": r.jam, "Tanggal": r.tanggal}));
+                        XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(dataExcel), "Laporan"), "Laporan_SPPG.xlsx");
+                    });
+                }
+            });
+        }
+
+        function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
+            var R = 6371; var dLat = deg2rad(lat2-lat1); var dLon = deg2rad(lon2-lon1); 
+            var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+        function deg2rad(deg) { return deg * (Math.PI/180); }
+    </script>
+</body>
+</html>
