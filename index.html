@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
     <script>
+    // 🛡️ SECURITY SYSTEM (ANTI-INTIP)
     document.addEventListener('contextmenu', event => event.preventDefault());
     document.onkeydown = function(e) {
         if (e.keyCode == 123) return false; 
@@ -9,43 +10,106 @@
         if (e.ctrlKey && (e.keyCode == 'U'.charCodeAt(0) || e.keyCode == 'S'.charCodeAt(0))) return false;
     }
     </script>
+
     <title>Dashboard SPPG Panjatan 002 🍱</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
+
     <style>
         body { margin: 0; font-family: 'Fredoka', sans-serif; background-color: #fdfbf7; overflow: hidden; }
-        .header { background-color: #FFC107; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1001; position: relative; height: 60px; }
+
+        /* HEADER STYLE ASLI (KUNING) */
+        .header {
+            background-color: #FFC107; padding: 10px 20px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1001; position: relative; height: 60px;
+        }
         .header h1 { margin: 0; font-size: 18px; color: #333; }
+        
+        /* MAP AREA */
         #map { height: calc(100vh - 200px); width: 100%; z-index: 1; background: #ddd; }
-        .info-panel { height: 200px; background: white; padding: 15px; box-sizing: border-box; border-top-left-radius: 20px; border-top-right-radius: 20px; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); overflow-y: auto; position: fixed; bottom: 0; width: 100%; z-index: 1002; }
-        .driver-card { background: #e3f2fd; border-radius: 12px; margin-bottom: 10px; border-left: 5px solid #2196F3; position: relative; overflow: hidden; transition: all 0.3s ease; }
-        .driver-header { padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* SIDEBAR / BOTTOM PANEL */
+        .info-panel {
+            height: 200px; background: white; padding: 15px; box-sizing: border-box;
+            border-top-left-radius: 20px; border-top-right-radius: 20px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1); overflow-y: auto;
+            position: fixed; bottom: 0; width: 100%; z-index: 1002;
+        }
+
+        /* --- STYLE CARD ACCORDION (BIRU TERANG) --- */
+        .driver-card {
+            background: #e3f2fd; 
+            border-radius: 12px; 
+            margin-bottom: 10px;
+            border-left: 5px solid #2196F3; 
+            position: relative;
+            overflow: hidden; 
+            transition: all 0.3s ease;
+        }
+        
+        .driver-header {
+            padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+        }
         .driver-header:hover { background-color: #bbdefb; }
+
         .arrow-indicator { font-size: 12px; color: #1565C0; transition: transform 0.3s ease; }
-        .driver-details-body { max-height: 0; opacity: 0; overflow: hidden; background: #ffffff; transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease; }
+        
+        .driver-details-body {
+            max-height: 0; opacity: 0; overflow: hidden; background: #ffffff;
+            transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+        }
+
         .driver-card.open .arrow-indicator { transform: rotate(180deg); }
-        .driver-card.open .driver-details-body { max-height: 500px; opacity: 1; padding-bottom: 10px; border-top: 1px solid #bbdefb; }
+        .driver-card.open .driver-details-body {
+            max-height: 500px; opacity: 1; padding-bottom: 10px; border-top: 1px solid #bbdefb;
+        }
+
         .sekolah-list { list-style: none; padding: 0; margin: 0; }
-        .sekolah-list li { padding: 8px 15px; border-bottom: 1px solid #eee; font-size: 11px; color: #555; display: flex; align-items: center; gap: 8px; }
+        .sekolah-list li {
+            padding: 8px 15px; border-bottom: 1px solid #eee;
+            font-size: 11px; color: #555; display: flex; align-items: center; gap: 8px;
+        }
         .sekolah-list li:last-child { border-bottom: none; }
-        .alert-kendala { background: #ffebee; color: #c62828; padding: 5px; margin: 10px; border-radius: 5px; font-size: 12px; border: 1px solid #ef5350; font-weight: bold; }
-        .notif-badge { position: absolute; top: 10px; right: 40px; background: #FF9800; color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px; display: none; animation: blink 1s infinite; }
+
+        .alert-kendala {
+            background: #ffebee; color: #c62828; padding: 5px; margin: 10px;
+            border-radius: 5px; font-size: 12px; border: 1px solid #ef5350; font-weight: bold;
+        }
+
+        .notif-badge {
+            position: absolute; top: 10px; right: 40px; background: #FF9800;
+            color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px;
+            display: none; animation: blink 1s infinite;
+        }
         @keyframes blink { 50% { opacity: 0.5; } }
-        .label-driver { background: rgba(255, 255, 255, 0.9); border: 1px solid #333; border-radius: 4px; padding: 2px 5px; font-weight: bold; font-size: 10px; color: #000; box-shadow: 1px 1px 3px rgba(0,0,0,0.3); white-space: nowrap; }
+        
+        .label-driver {
+            background: rgba(255, 255, 255, 0.9); border: 1px solid #333; 
+            border-radius: 4px; padding: 2px 5px; font-weight: bold; 
+            font-size: 10px; color: #000; box-shadow: 1px 1px 3px rgba(0,0,0,0.3); white-space: nowrap;
+        }
         .emoji-icon { font-size: 24px; text-align: center; line-height: 1; text-shadow: 2px 2px 0px #fff; }
+
     </style>
 </head>
 <body>
+
     <div class="header">
         <div>
             <h1>🍱 SPPG Panjatan 002 (Viewer)</h1>
             <small style="font-size:11px;">Live Monitoring by Fadlan Kharisma</small>
         </div>
     </div>
+
     <div id="map"></div>
+
     <div class="info-panel" id="listDriver">
-        <div style="text-align:center; color:#999; padding:20px;">Menunggu sinyal armada... 📡</div>
+        <div style="text-align:center; color:#999; padding:20px;">
+            Menunggu sinyal armada... 📡
+        </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
@@ -53,6 +117,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
+        // 🔥 FIREBASE CONFIGURATION 🔥
         const firebaseConfig = {
             apiKey: "AIzaSyAXnmhUbBBZv7as33EXqKMVhmWsv1s0S9Y",
             authDomain: "sppg-tracker.firebaseapp.com",
@@ -62,27 +127,47 @@
             messagingSenderId: "583689454613",
             appId: "1:583689454613:web:24e9441df31b9e3d5e3a1c"
         };
+
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
+        // 1. SETUP PETA & TITIK SPPG
         const SPPG_COORDS = [-7.907354, 110.169152];
-        const map = L.map('map').setView(SPPG_COORDS, 14); 
+        const map = L.map('map').setView(SPPG_COORDS, 13); 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
+        // 2. DATA SEKOLAH
         const sekolahList = [
-            { nama: "KB SADEWA CERME", lat: -7.8958782, lng: 110.1775952 }, { nama: "KB PREGIWATI", lat: -7.8847537, lng: 110.1663259 }, { nama: "KB SADEWO", lat: -7.8958400, lng: 110.1774863 }, { nama: "KB BAYU SETO", lat: -7.8967954, lng: 110.1620361 }, { nama: "KB EDELWEIS", lat: -7.8765058, lng: 110.1867856 }, { nama: "KB NAKULA SADEWA", lat: -7.8982101, lng: 110.1898657 }, { nama: "KB MASITA", lat: -7.8846430, lng: 110.1816280 }, { nama: "KB TUNAS TIRTO", lat: -7.9244000, lng: 110.1817000 }, { nama: "KB CITRA GAMI", lat: -7.9110322, lng: 110.1939914 }, { nama: "TK ABA CABEAN", lat: -7.9137737, lng: 110.1922567 }, { nama: "RA MASYITOH GOTAKAN", lat: -7.8847933, lng: 110.1662309 }, { nama: "RA ZAID BIN SABIT", lat: -7.8998072, lng: 110.1682897 }, { nama: "TK PKK PUSPITORINI", lat: -7.8958400, lng: 110.1774863 }, { nama: "TK ABA DUKUH", lat: -7.8766542, lng: 110.1867416 }, { nama: "TK PKK KARTINI", lat: -7.8978904, lng: 110.1901404 }, { nama: "TK MASITA", lat: -7.8846299, lng: 110.1816313 }, { nama: "TK MASYITOH MAESAN", lat: -7.9243861, lng: 110.1960140 }, { nama: "TK ABA PERENG", lat: -7.9020787, lng: 110.2047730 }, { nama: "TK ABA SUNGAPAN", lat: -7.9264798, lng: 110.1810969 }, { nama: "TK PKK MELATI KEMENDUNG", lat: -7.8891136, lng: 110.1687127 }, { nama: "SD N DUKUH", lat: -7.8766854, lng: 110.1860619 }, { nama: "SD N KEMBANG MALANG", lat: -7.8955791, lng: 110.1771435 }, { nama: "SD UNGGULAN MUH KREMBANGAN", lat: -7.8862298, lng: 110.1833212 }, { nama: "SD N KEMENDUNG", lat: -7.8983878, lng: 110.1666515 }, { nama: "SD N KREMBANGAN", lat: -7.8962851, lng: 110.1883280 }, { nama: "SD N 1 DEPOK", lat: -7.9107935, lng: 110.1587187 }, { nama: "SD N KEPUH", lat: -7.8932589, lng: 110.1830488 }, { nama: "SD N 3 SUNGAPAN", lat: -7.9282203, lng: 110.1797436 }, { nama: "MI ZAID BIN SABIT GOTAKAN", lat: -7.8998072, lng: 110.1682897 }, { nama: "MAN 2 Kulon Progo", lat: -7.8844263, lng: 110.1535834 }
+            { nama: "KB SADEWA CERME", lat: -7.8958782, lng: 110.1775952 }, { nama: "KB PREGIWATI", lat: -7.8847537, lng: 110.1663259 },
+            { nama: "KB SADEWO", lat: -7.8958400, lng: 110.1774863 }, { nama: "KB BAYU SETO", lat: -7.8967954, lng: 110.1620361 },
+            { nama: "KB EDELWEIS", lat: -7.8765058, lng: 110.1867856 }, { nama: "KB NAKULA SADEWA", lat: -7.8982101, lng: 110.1898657 },
+            { nama: "KB MASITA", lat: -7.8846430, lng: 110.1816280 }, { nama: "KB TUNAS TIRTO", lat: -7.9244000, lng: 110.1817000 },
+            { nama: "KB CITRA GAMI", lat: -7.9110322, lng: 110.1939914 }, { nama: "TK ABA CABEAN", lat: -7.9137737, lng: 110.1922567 },
+            { nama: "RA MASYITOH GOTAKAN", lat: -7.8847933, lng: 110.1662309 }, { nama: "RA ZAID BIN SABIT", lat: -7.8998072, lng: 110.1682897 },
+            { nama: "TK PKK PUSPITORINI", lat: -7.8958400, lng: 110.1774863 }, { nama: "TK ABA DUKUH", lat: -7.8766542, lng: 110.1867416 },
+            { nama: "TK PKK KARTINI", lat: -7.8978904, lng: 110.1901404 }, { nama: "TK MASITA", lat: -7.8846299, lng: 110.1816313 },
+            { nama: "TK MASYITOH MAESAN", lat: -7.9243861, lng: 110.1960140 }, { nama: "TK ABA PERENG", lat: -7.9020787, lng: 110.2047730 },
+            { nama: "TK ABA SUNGAPAN", lat: -7.9264798, lng: 110.1810969 }, { nama: "TK PKK MELATI KEMENDUNG", lat: -7.8891136, lng: 110.1687127 },
+            { nama: "SD N DUKUH", lat: -7.8766854, lng: 110.1860619 }, { nama: "SD N KEMBANG MALANG", lat: -7.8955791, lng: 110.1771435 },
+            { nama: "SD UNGGULAN MUH KREMBANGAN", lat: -7.8862298, lng: 110.1833212 }, { nama: "SD N KEMENDUNG", lat: -7.8983878, lng: 110.1666515 },
+            { nama: "SD N KREMBANGAN", lat: -7.8962851, lng: 110.1883280 }, { nama: "SD N 1 DEPOK", lat: -7.9107935, lng: 110.1587187 },
+            { nama: "SD N KEPUH", lat: -7.8932589, lng: 110.1830488 }, { nama: "SD N 3 SUNGAPAN", lat: -7.9282203, lng: 110.1797436 },
+            { nama: "MI ZAID BIN SABIT GOTAKAN", lat: -7.8998072, lng: 110.1682897 }, { nama: "MAN 2 Kulon Progo", lat: -7.8844263, lng: 110.1535834 }
         ];
 
         const iconSekolah = L.divIcon({ className: 'emoji-icon', html: '🏫', iconSize: [20, 20] });
         sekolahList.forEach(s => L.marker([s.lat, s.lng], {icon: iconSekolah}).addTo(map).bindPopup(s.nama));
 
         const iconSPPG = L.divIcon({ className: 'emoji-icon', html: '🏢', iconSize: [30, 30] });
-        L.marker(SPPG_COORDS, {icon: iconSPPG}).addTo(map).bindTooltip("SPPG PANJATAN 002", {permanent:true, direction:'top', offset: [0, -20], className: 'label-driver'});
+        L.marker(SPPG_COORDS, {icon: iconSPPG}).addTo(map)
+         .bindTooltip("SPPG PANJATAN 002", {permanent:true, direction:'top', offset: [0, -20], className: 'label-driver'});
 
         let markers = {};
         const iconMobil = L.divIcon({ className: 'emoji-icon', html: '🚚', iconSize: [35, 35] });
+
         let expandedDriver = null; 
 
+        // 3. LOGIC MONITORING UTAMA (REALTIME)
         database.ref('drivers').on('value', (snapshot) => {
             const data = snapshot.val();
             const listDiv = document.getElementById('listDriver');
@@ -93,20 +178,24 @@
             markers = {}; 
 
             if(data) {
-                Object.values(data).forEach(driver => {
+                // =============================================================
+                // FIX LOGIC: GUNAKAN KEY MOBIL (Mobil 1/Mobil 2) SEBAGAI IDENTITAS AMAN
+                // BUKAN LAGI MENGGUNAKAN NAMA SUPIR UNTUK ID DROPDOWN
+                // =============================================================
+                Object.entries(data).forEach(([carKey, driver]) => {
+
                     let tujuanNext = (driver.rute && driver.rute.length > 0) ? driver.rute[0] : "Standby / Selesai";
                     
                     let isAtBase = false;
                     let displayLat = driver.lat;
                     let displayLng = driver.lng;
 
-                    // 🧲 ALGORITMA MAGNETIC SNAPPING
+                    // MAGNETIC SNAPPING DI SPPG
                     if (driver.lat && driver.lng) {
                         let distToBase = getDistanceFromLatLonInKm(driver.lat, driver.lng, SPPG_COORDS[0], SPPG_COORDS[1]);
-                        if (distToBase <= 0.1) { // JIKA JARAK DI BAWAH 100 METER
+                        if (distToBase <= 0.1) { 
                             isAtBase = true;
-                            tujuanNext = "Sedang Mengambil MBG 🍱";
-                            // PAKSA KOORDINAT NEMPEL DI GEDUNG SPPG (Biarpun GPS aslinya meleset)
+                            tujuanNext = "Sedang Mengambil MBG 🍱"; 
                             displayLat = SPPG_COORDS[0];
                             displayLng = SPPG_COORDS[1];
                         }
@@ -132,14 +221,19 @@
                         }).join('');
                     }
 
-                    // GAMBAR MOBIL DENGAN KOORDINAT YANG UDAH DI-SNAP
                     updateMarker(driver, tujuanNext, displayLat, displayLng);
 
-                    let openClass = (expandedDriver === driver.nama) ? "open" : "";
+                    // =============================================================
+                    // ID AMAN (Bebas Spasi/Simbol)
+                    // =============================================================
+                    let safeId = carKey.replace(/\s/g, ''); // Menghasilkan "Mobil1" atau "Mobil2"
+                    let openClass = (expandedDriver === safeId) ? "open" : "";
+                    
                     htmlContent += `
-                        <div class="driver-card ${openClass}" id="card-${driver.nama.replace(/\s/g, '')}">
+                        <div class="driver-card ${openClass}" id="card-${safeId}">
                             ${notifHTML}
-                            <div class="driver-header" onclick="toggleAccordion('${driver.nama}')">
+                            
+                            <div class="driver-header" onclick="toggleAccordion('${safeId}')">
                                 <div style="display:flex; align-items:center;">
                                     <div style="font-size:24px; margin-right:10px;">🚚</div>
                                     <div>
@@ -152,32 +246,47 @@
                                     <div class="arrow-indicator">▼</div>
                                 </div>
                             </div>
+
                             <div class="driver-details-body">
-                                <div style="background:#f1f8e9; padding:5px 15px; font-size:10px; color:#33691e; font-weight:bold;">SISA PENGANTARAN:</div>
-                                <ul class="sekolah-list">${listMuatanHTML}</ul>
+                                <div style="background:#f1f8e9; padding:5px 15px; font-size:10px; color:#33691e; font-weight:bold;">
+                                    SISA PENGANTARAN (${carKey}):
+                                </div>
+                                <ul class="sekolah-list">
+                                    ${listMuatanHTML}
+                                </ul>
                                 ${kendalaHTML}
                             </div>
-                        </div>`;
+                        </div>
+                    `;
                 });
+                
                 listDiv.innerHTML = htmlContent;
+
             } else {
                 listDiv.innerHTML = "<div style='text-align:center; color:#999; padding:20px;'>Belum ada armada aktif.</div>";
             }
         });
 
-        function toggleAccordiaon(driverName) {
-            expandedDriver = (expandedDriver === driverName) ? null : driverName;
+        // 🔄 FUNGSI TOGGLE ACCORDION MENGGUNAKAN ID AMAN
+        function toggleAccordion(safeId) {
+            if (expandedDriver === safeId) {
+                expandedDriver = null;
+            } else {
+                expandedDriver = safeId;
+            }
+
             const allCards = document.querySelectorAll('.driver-card');
             allCards.forEach(card => card.classList.remove('open'));
+            
             if (expandedDriver) {
-                const targetCard = document.getElementById('card-' + expandedDriver.replace(/\s/g, ''));
+                const targetCard = document.getElementById('card-' + expandedDriver);
                 if (targetCard) targetCard.classList.add('open');
             }
         }
 
-        // FUNGSI UPDATE MARKER PAKAI KOORDINAT BARU (SNAP)
         function updateMarker(driver, tujuanNext, finalLat, finalLng) {
             let popupContent = `<b>${driver.nama}</b><br>Menuju: ${tujuanNext}`;
+            
             markers[driver.nama] = L.marker([finalLat, finalLng], {icon: iconMobil})
                 .bindPopup(popupContent)
                 .bindTooltip(driver.nama, { permanent: true, direction: 'right', className: 'label-driver' })
