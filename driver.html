@@ -10,590 +10,305 @@
         if (e.ctrlKey && (e.keyCode == 'U'.charCodeAt(0) || e.keyCode == 'S'.charCodeAt(0))) return false;
     }
     </script>
-
     <title>Driver App - SPPG Panjatan</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <style>
-        /* 🌌 UI/UX GEN-Z DARK MODE PROFESSIONAL */
-        :root {
-            --bg-dark: #0f172a;       /* Slate 900 */
-            --bg-card: #1e293b;       /* Slate 800 */
-            --primary: #3b82f6;       /* Neon Blue */
-            --primary-glow: rgba(59, 130, 246, 0.4);
-            --success: #10b981;       /* Emerald */
-            --danger: #ef4444;        /* Red */
-            --text-main: #f8fafc;     /* Slate 50 */
-            --text-muted: #94a3b8;    /* Slate 400 */
-            --border: #334155;        /* Slate 700 */
-        }
-
-        body { 
-            margin: 0; font-family: 'Fredoka', sans-serif; background-color: #000; 
-            display: flex; justify-content: center; color: var(--text-main);
-        }
-        
-        /* MOBILE LOCKED */
-        .app-container {
-            width: 100%; max-width: 480px; background-color: var(--bg-dark); 
-            min-height: 100vh; position: relative; overflow-x: hidden;
-            box-shadow: 0 0 40px rgba(0,0,0,0.5);
-        }
-
-        /* HEADER DARK NEON */
-        .header {
-            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
-            padding: 20px 20px; text-align: center; 
-            border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
-            box-shadow: 0 10px 20px var(--primary-glow); z-index: 10; position: relative;
-        }
-        .header h1 { margin: 0; font-size: 22px; color: white; letter-spacing: 1px; }
-        .header small { opacity: 0.8; font-size: 11px; color: #e2e8f0; }
-
-        .content-wrap { padding: 20px; }
-
-        .glass-card {
-            background: var(--bg-card); padding: 18px; border-radius: 16px; 
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2); margin-bottom: 18px; 
-            border: 1px solid var(--border);
-        }
-
-        .section-title { font-size: 13px; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; font-weight: 600; }
-
-        /* INPUT STYLE */
-        .input-group { margin-bottom: 12px; }
-        .input-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
-        .input-group input { 
-            width: 100%; padding: 12px; background: #0f172a; border: 1px solid var(--border); 
-            border-radius: 10px; font-family: inherit; font-size: 14px; box-sizing: border-box; 
-            outline: none; color: white; transition: 0.3s;
-        }
-        .input-group input:focus { border-color: var(--primary); box-shadow: 0 0 8px var(--primary-glow); }
-
-        /* CAR SELECTOR */
+        :root { --primary: #1565C0; --success: #27ae60; --danger: #c0392b; --bg: #fdfbf7; --text-main: #333; --text-muted: #666; }
+        body { margin: 0; font-family: 'Fredoka', sans-serif; background-color: #e0e0e0; display: flex; justify-content: center; color: var(--text-main); }
+        .app-container { width: 100%; max-width: 480px; background-color: var(--bg); min-height: 100vh; position: relative; overflow-x: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .header { background-color: #FFC107; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; position: relative; }
+        .header h1 { margin: 0; font-size: 18px; color: #333; }
+        .content-wrap { padding: 15px; }
+        .glass-card { background: white; padding: 15px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 15px; border: 1px solid #eee; }
+        .section-title { font-size: 14px; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: var(--text-muted); }
+        .input-group input { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-family: inherit; font-size: 14px; box-sizing: border-box; outline: none; transition: 0.3s; }
+        .input-group input:focus { border-color: var(--primary); background: #f0f8ff; }
         .car-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .car-option input { display: none; }
-        .car-option span {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            padding: 12px; background: var(--bg-dark); border: 1px solid var(--border); border-radius: 12px;
-            font-weight: 600; color: var(--text-muted); cursor: pointer; transition: 0.3s;
-        }
-        .car-option input:checked + span { 
-            background: rgba(59, 130, 246, 0.1); border-color: var(--primary); 
-            color: var(--primary); box-shadow: inset 0 0 10px var(--primary-glow);
-        }
-        .car-option.disabled span { opacity: 0.4; cursor: not-allowed; }
-
-        /* SCHOOL CHECKBOX */
-        .school-grid { 
-            display: grid; grid-template-columns: 1fr; gap: 8px; 
-            max-height: 220px; overflow-y: auto; padding-right: 5px; 
-        }
-        .school-item {
-            display: flex; align-items: center; padding: 12px; background: var(--bg-dark); 
-            border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: 0.2s;
-        }
-        .school-item:hover { border-color: var(--text-muted); }
-        .school-item input { width: 18px; height: 18px; accent-color: var(--primary); margin-right: 12px; cursor: pointer; }
-        .school-item span { font-size: 13px; font-weight: 500; color: var(--text-main); }
-
-        /* BUTTONS */
-        .btn-start {
-            width: 100%; padding: 16px; background: var(--primary); color: white; border: none;
-            border-radius: 12px; font-size: 16px; font-weight: 600; font-family: inherit;
-            cursor: pointer; box-shadow: 0 4px 15px var(--primary-glow); transition: 0.2s;
-        }
-        .btn-start:active { transform: scale(0.97); }
-
+        .car-option span { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 12px; background: #f5f5f5; border: 2px solid #e0e0e0; border-radius: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
+        .car-option input:checked + span { background: #e3f2fd; border-color: var(--primary); color: var(--primary); }
+        .car-option.disabled span { opacity: 0.5; cursor: not-allowed; }
+        .school-grid { display: grid; grid-template-columns: 1fr; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
+        .school-item { display: flex; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 10px; border: 1px solid #eee; cursor: pointer; }
+        .school-item input { width: 18px; height: 18px; accent-color: var(--primary); margin-right: 10px; }
+        .school-item span { font-size: 13px; font-weight: 500; }
+        .btn-start { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; font-family: inherit; cursor: pointer; box-shadow: 0 4px 10px rgba(21, 101, 192, 0.3); transition: 0.2s; }
+        .btn-start:active { transform: scale(0.98); }
         .admin-flex { display: flex; gap: 10px; margin-bottom: 10px; }
-        .btn-admin {
-            flex: 1; padding: 12px; border: none; border-radius: 10px; font-family: inherit;
-            font-weight: 600; font-size: 12px; cursor: pointer; color: white;
-        }
-
-        /* --- STYLE KARTU STATUS AKTIF --- */
+        .btn-admin { flex: 1; padding: 10px; border: none; border-radius: 8px; font-family: inherit; font-weight: 600; font-size: 12px; cursor: pointer; color: white; }
         #status-panel { display: none; }
-        .driver-card-active {
-            background: linear-gradient(145deg, #1e293b, #0f172a); border-radius: 16px; padding: 20px; 
-            margin-bottom: 15px; border-left: 5px solid var(--primary); box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        /* MANIFEST DINAMIS */
-        .task-section { margin-top: 15px; }
-        .task-list { margin-bottom: 10px; }
-        .task-item {
-            display: flex; align-items: center; justify-content: space-between; padding: 12px 15px; 
-            background: var(--bg-card); border-radius: 10px; margin-bottom: 8px; 
-            border: 1px solid var(--border); transition: 0.3s;
-        }
-        .task-item-left { display: flex; align-items: center; }
-        .task-item input { width: 20px; height: 20px; accent-color: var(--success); margin-right: 15px; cursor: pointer; }
-        .task-item label { font-size: 14px; font-weight: 500; color: var(--text-main); cursor: pointer; }
-        
-        .task-done { opacity: 0.5; background: var(--bg-dark); }
-        .task-done label { text-decoration: line-through; color: var(--text-muted); }
-
-        /* BUTTON KENDALA */
-        .btn-kendala {
-            width: 100%; padding: 12px; background: transparent; color: #f59e0b; border: 1px solid #f59e0b;
-            border-radius: 10px; font-size: 14px; font-weight: 600; font-family: inherit;
-            cursor: pointer; transition: 0.2s; margin-bottom: 10px;
-        }
-        .btn-kendala:active { background: rgba(245, 158, 11, 0.1); }
-
-        /* DARK MAP MAGiC */
-        #map { height: 250px; border-radius: 12px; z-index: 1; border: 1px solid var(--border); }
-        .leaflet-layer, .leaflet-control-zoom-in, .leaflet-control-zoom-out, .leaflet-control-attribution {
-            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-        }
-        .emoji-icon { font-size: 22px; text-align: center; line-height: 1; text-shadow: 0 0 5px #000; }
-
-        div:where(.swal2-container) div:where(.swal2-popup) {
-            background-color: var(--bg-card); color: var(--text-main); font-family: 'Fredoka', sans-serif;
-        }
-        div:where(.swal2-container) input:where(.swal2-input) { color: white; }
+        .driver-card { background: #e3f2fd; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 5px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .task-list { margin-top: 15px; border-top: 1px dashed #bbdefb; padding-top: 15px; }
+        .task-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e3f2fd; }
+        .task-item input { width: 18px; height: 18px; accent-color: var(--success); margin-right: 12px; }
+        .task-item label { font-size: 13px; font-weight: 500; width: 100%; }
+        .task-item:has(input:checked) { opacity: 0.5; background: #f1f5f9; }
+        .task-item:has(input:checked) label { text-decoration: line-through; color: var(--text-muted); }
+        #map { height: 220px; border-radius: 12px; z-index: 1; border: 2px solid #eee; }
+        .emoji-icon { font-size: 20px; text-align: center; line-height: 1; text-shadow: 1px 1px 0 #fff; }
+        .label-driver { background: rgba(255, 255, 255, 0.9); border: 1px solid #333; border-radius: 4px; padding: 2px 5px; font-weight: bold; font-size: 10px; color: #000; white-space: nowrap; }
     </style>
 </head>
 <body>
-
 <div class="app-container">
     <div class="header">
-        <h1>⚙️ DRIVER HUB</h1>
-        <small id="wake-status">🔴 Standby Mode</small>
+        <div><h1>⚙️ Driver App</h1><small id="wake-status" style="font-size:10px;">Layar Terkunci Hidup ☀️</small></div>
     </div>
-
     <div class="content-wrap">
         <div class="admin-flex" id="admin-panel">
             <button class="btn-admin" style="background:var(--success);" onclick="downloadExcel()">📊 Tarik Excel</button>
-            <button class="btn-admin" style="background:var(--danger);" onclick="hapusArmadaAktif()">🗑️ Reset Database</button>
+            <button class="btn-admin" style="background:var(--danger);" onclick="hapusArmadaAktif()">🗑️ Reset Data</button>
         </div>
-
         <div id="setup-panel">
             <div class="glass-card">
                 <div class="section-title">1. Identitas Supir</div>
-                <div class="input-group">
-                    <label>NAMA DRIVER</label>
-                    <input type="text" id="input-nama" placeholder="Contoh: Arya" autocomplete="off">
-                </div>
-                <div class="input-group">
-                    <label>KLOTER PENGIRIMAN</label>
-                    <input type="text" id="input-kloter" placeholder="Contoh: Kloter 1" autocomplete="off">
-                </div>
+                <div class="input-group"><label>Nama Anda</label><input type="text" id="input-nama" placeholder="Contoh: Arya" autocomplete="off"></div>
+                <div class="input-group"><label>Kloter Pengiriman</label><input type="text" id="input-kloter" placeholder="Contoh: Kloter 1" autocomplete="off"></div>
             </div>
-
             <div class="glass-card">
                 <div class="section-title">2. Pilih Armada</div>
                 <div class="car-grid">
-                    <label class="car-option" id="opt-mobil1">
-                        <input type="radio" name="car_choice" value="Mobil 1">
-                        <span id="label-mobil1">🚚 Mobil 1</span>
-                    </label>
-                    <label class="car-option" id="opt-mobil2">
-                        <input type="radio" name="car_choice" value="Mobil 2">
-                        <span id="label-mobil2">🚚 Mobil 2</span>
-                    </label>
+                    <label class="car-option" id="opt-mobil1"><input type="radio" name="car_choice" value="Mobil 1"><span id="label-mobil1">🚚 Mobil 1</span></label>
+                    <label class="car-option" id="opt-mobil2"><input type="radio" name="car_choice" value="Mobil 2"><span id="label-mobil2">🚚 Mobil 2</span></label>
                 </div>
             </div>
-
             <div class="glass-card">
-                <div class="section-title">3. Manifest Tujuan (Pilih Rute)</div>
-                <div class="school-grid" id="school-selector">
-                    </div>
+                <div class="section-title">3. Rute Sekolah (Manifest)</div>
+                <div class="school-grid" id="school-selector"></div>
             </div>
-
-            <button class="btn-start" onclick="mulaiJalan()">🚀 TRANSMIT & GO</button>
+            <button class="btn-start" onclick="mulaiJalan()">🚀 Mulai Bertugas</button>
         </div>
-
         <div id="status-panel">
-            
-            <div class="driver-card-active">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div style="display:flex; align-items:center;">
-                        <div style="font-size:32px; margin-right:15px;">🚚</div>
-                        <div>
-                            <b style="color:var(--primary); font-size:18px; letter-spacing:1px;" id="active-nama">NAMA</b> 
-                            <span style="font-size:12px; color:var(--text-muted);" id="active-kloter">(Kloter)</span><br>
-                            <span style="font-size:12px; color:var(--text-muted);">Armada: <b style="color:#fff;" id="active-mobil">Mobil</b></span>
-                        </div>
-                    </div>
+            <div class="driver-card">
+                <div style="display:flex; align-items:center;">
+                    <div style="font-size:28px; margin-right:12px;">🚚</div>
+                    <div><b style="color:var(--primary); font-size:16px;" id="active-nama">Nama</b> <span style="font-size:12px; color:var(--text-muted);" id="active-kloter">(Kloter)</span><br><span style="font-size:13px;">Armada: <b id="active-mobil">Mobil</b></span></div>
                 </div>
-
-                <div style="margin-top: 15px; font-size: 12px; color: var(--danger); font-weight: 600;" id="gps-status">
-                    Mencari sinyal GPS...
-                </div>
+                <div style="margin-top: 10px; font-size: 11px; color: var(--danger); font-weight: bold;" id="gps-status">Mencari sinyal GPS...</div>
+                <div class="task-list" id="active-manifest"></div>
             </div>
-
-            <div class="glass-card">
-                <div class="section-title">📦 Checkpoint Pengantaran</div>
-                <div class="task-section">
-                    <div id="pending-list" class="task-list"></div>
-                    <div class="section-title" style="margin-top:20px; color:var(--success); font-size:11px;">Selesai Diantar</div>
-                    <div id="completed-list" class="task-list"></div>
-                </div>
-            </div>
-
             <div class="glass-card" style="padding: 10px;">
-                <div class="section-title" style="margin: 5px 10px;">🗺️ Tactical Map</div>
+                <div class="section-title" style="margin: 5px 10px;">🗺️ Radar Map</div>
                 <div id="map"></div>
             </div>
-
-            <button class="btn-kendala" onclick="laporKendala()">⚠️ Laporkan Kendala Darurat</button>
-            <button onclick="berhentiTugas()" style="width:100%; padding:14px; background:var(--danger); color:white; border:none; border-radius:12px; font-weight:600;">🛑 Akhiri Transmisi (Selesai)</button>
+            <button onclick="berhentiTugas()" style="width:100%; padding:14px; background:var(--danger); color:white; border:none; border-radius:12px; font-weight:600; margin-top:10px;">🛑 Selesai & Berhenti</button>
         </div>
     </div>
 </div>
 
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyAXnmhUbBBZv7as33EXqKMVhmWsv1s0S9Y", authDomain: "sppg-tracker.firebaseapp.com",
+        databaseURL: "https://sppg-tracker-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "sppg-tracker", storageBucket: "sppg-tracker.firebasestorage.app",
+        messagingSenderId: "583689454613", appId: "1:583689454613:web:24e9441df31b9e3d5e3a1c"
+    };
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-    <script>
-        // 🔥 KONFIGURASI FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyAXnmhUbBBZv7as33EXqKMVhmWsv1s0S9Y",
-            authDomain: "sppg-tracker.firebaseapp.com",
-            databaseURL: "https://sppg-tracker-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "sppg-tracker",
-            storageBucket: "sppg-tracker.firebasestorage.app",
-            messagingSenderId: "583689454613",
-            appId: "1:583689454613:web:24e9441df31b9e3d5e3a1c"
-        };
-        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+    const SPPG_COORDS = [-7.907354, 110.169152];
+    const sekolahList = [
+        { nama: "KB SADEWA CERME", lat: -7.8958782, lng: 110.1775952 }, { nama: "KB PREGIWATI", lat: -7.8847537, lng: 110.1663259 }, { nama: "KB SADEWO", lat: -7.8958400, lng: 110.1774863 }, { nama: "KB BAYU SETO", lat: -7.8967954, lng: 110.1620361 }, { nama: "KB EDELWEIS", lat: -7.8765058, lng: 110.1867856 }, { nama: "KB NAKULA SADEWA", lat: -7.8982101, lng: 110.1898657 }, { nama: "KB MASITA", lat: -7.8846430, lng: 110.1816280 }, { nama: "KB TUNAS TIRTO", lat: -7.9244000, lng: 110.1817000 }, { nama: "KB CITRA GAMI", lat: -7.9110322, lng: 110.1939914 }, { nama: "TK ABA CABEAN", lat: -7.9137737, lng: 110.1922567 }, { nama: "RA MASYITOH GOTAKAN", lat: -7.8847933, lng: 110.1662309 }, { nama: "RA ZAID BIN SABIT", lat: -7.8998072, lng: 110.1682897 }, { nama: "TK PKK PUSPITORINI", lat: -7.8958400, lng: 110.1774863 }, { nama: "TK ABA DUKUH", lat: -7.8766542, lng: 110.1867416 }, { nama: "TK PKK KARTINI", lat: -7.8978904, lng: 110.1901404 }, { nama: "TK MASITA", lat: -7.8846299, lng: 110.1816313 }, { nama: "TK MASYITOH MAESAN", lat: -7.9243861, lng: 110.1960140 }, { nama: "TK ABA PERENG", lat: -7.9020787, lng: 110.2047730 }, { nama: "TK ABA SUNGAPAN", lat: -7.9264798, lng: 110.1810969 }, { nama: "TK PKK MELATI KEMENDUNG", lat: -7.8891136, lng: 110.1687127 }, { nama: "SD N DUKUH", lat: -7.8766854, lng: 110.1860619 }, { nama: "SD N KEMBANG MALANG", lat: -7.8955791, lng: 110.1771435 }, { nama: "SD UNGGULAN MUH KREMBANGAN", lat: -7.8862298, lng: 110.1833212 }, { nama: "SD N KEMENDUNG", lat: -7.8983878, lng: 110.1666515 }, { nama: "SD N KREMBANGAN", lat: -7.8962851, lng: 110.1883280 }, { nama: "SD N 1 DEPOK", lat: -7.9107935, lng: 110.1587187 }, { nama: "SD N KEPUH", lat: -7.8932589, lng: 110.1830488 }, { nama: "SD N 3 SUNGAPAN", lat: -7.9282203, lng: 110.1797436 }, { nama: "MI ZAID BIN SABIT GOTAKAN", lat: -7.8998072, lng: 110.1682897 }, { nama: "MAN 2 Kulon Progo", lat: -7.8844263, lng: 110.1535834 }
+    ];
 
-        // 🏫 DATA SEKOLAH
-        const sekolahList = [
-            { nama: "KB SADEWA CERME", lat: -7.8958782, lng: 110.1775952 },
-            { nama: "KB PREGIWATI", lat: -7.8847537, lng: 110.1663259 },
-            { nama: "KB SADEWO", lat: -7.8958400, lng: 110.1774863 },
-            { nama: "KB BAYU SETO", lat: -7.8967954, lng: 110.1620361 }, 
-            { nama: "KB EDELWEIS", lat: -7.8765058, lng: 110.1867856 },
-            { nama: "KB NAKULA SADEWA", lat: -7.8982101, lng: 110.1898657 },
-            { nama: "KB MASITA", lat: -7.8846430, lng: 110.1816280 },
-            { nama: "KB TUNAS TIRTO", lat: -7.9244000, lng: 110.1817000 },
-            { nama: "KB CITRA GAMI", lat: -7.9110322, lng: 110.1939914 },
-            { nama: "TK ABA CABEAN", lat: -7.9137737, lng: 110.1922567 },
-            { nama: "RA MASYITOH GOTAKAN", lat: -7.8847933, lng: 110.1662309 },
-            { nama: "RA ZAID BIN SABIT", lat: -7.8998072, lng: 110.1682897 },
-            { nama: "TK PKK PUSPITORINI", lat: -7.8958400, lng: 110.1774863 },
-            { nama: "TK ABA DUKUH", lat: -7.8766542, lng: 110.1867416 },
-            { nama: "TK PKK KARTINI", lat: -7.8978904, lng: 110.1901404 },
-            { nama: "TK MASITA", lat: -7.8846299, lng: 110.1816313 },
-            { nama: "TK MASYITOH MAESAN", lat: -7.9243861, lng: 110.1960140 },
-            { nama: "TK ABA PERENG", lat: -7.9020787, lng: 110.2047730 },
-            { nama: "TK ABA SUNGAPAN", lat: -7.9264798, lng: 110.1810969 },
-            { nama: "TK PKK MELATI KEMENDUNG", lat: -7.8891136, lng: 110.1687127 },
-            { nama: "SD N DUKUH", lat: -7.8766854, lng: 110.1860619 },
-            { nama: "SD N KEMBANG MALANG", lat: -7.8955791, lng: 110.1771435 },
-            { nama: "SD UNGGULAN MUH KREMBANGAN", lat: -7.8862298, lng: 110.1833212 },
-            { nama: "SD N KEMENDUNG", lat: -7.8983878, lng: 110.1666515 },
-            { nama: "SD N KREMBANGAN", lat: -7.8962851, lng: 110.1883280 },
-            { nama: "SD N 1 DEPOK", lat: -7.9107935, lng: 110.1587187 },
-            { nama: "SD N KEPUH", lat: -7.8932589, lng: 110.1830488 },
-            { nama: "SD N 3 SUNGAPAN", lat: -7.9282203, lng: 110.1797436 },
-            { nama: "MI ZAID BIN SABIT GOTAKAN", lat: -7.8998072, lng: 110.1682897 },
-            { nama: "MAN 2 Kulon Progo", lat: -7.8844263, lng: 110.1535834 }
-        ];
+    const schoolContainer = document.getElementById('school-selector');
+    sekolahList.forEach(s => { schoolContainer.innerHTML += `<label class="school-item"><input type="checkbox" value="${s.nama}" class="chk-school"><span>${s.nama}</span></label>`; });
 
-        // 🎨 RENDER PILIHAN SEKOLAH
-        const schoolContainer = document.getElementById('school-selector');
-        sekolahList.forEach((s) => {
-            schoolContainer.innerHTML += `
-                <label class="school-item">
-                    <input type="checkbox" value="${s.nama}" class="chk-school">
-                    <span>${s.nama}</span>
-                </label>
-            `;
+    const map = L.map('map', {zoomControl: false}).setView(SPPG_COORDS, 13); 
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    let markers = {};
+    const iconMobil = L.divIcon({ className: 'emoji-icon', html: '🚚', iconSize: [20, 20] });
+
+    let myCar = null, myName = "", myKloter = "", myRoute = [], watchId = null, potentialCheckins = {}, reportedSessions = {}, wakeLock = null;
+
+    async function keepScreenAwake() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
+    function speakNotification(text) { if ('speechSynthesis' in window) { const msg = new SpeechSynthesisUtterance(text); msg.lang = 'id-ID'; window.speechSynthesis.speak(msg); } }
+
+    // =========================================================
+    // 💾 AUTO RESUME (MENCEGAH HILANG SAAT REFRESH/MINIMIZE)
+    // =========================================================
+    window.onload = () => {
+        let savedSession = localStorage.getItem('sppg_driver_session');
+        if (savedSession) {
+            let data = JSON.parse(savedSession);
+            myCar = data.myCar;
+            myName = data.myName;
+            myKloter = data.myKloter;
+            myRoute = data.myRoute;
+
+            // Langsung eksekusi tracking tanpa ngisi form lagi (isNew = false)
+            mulaiTrackingSistem(false); 
+        }
+    };
+
+    database.ref('drivers').on('value', (snapshot) => {
+        const data = snapshot.val() || {};
+        ['Mobil 1', 'Mobil 2'].forEach((mobil, idx) => {
+            let idNum = idx + 1, optElem = document.getElementById(`opt-mobil${idNum}`), labelElem = document.getElementById(`label-mobil${idNum}`), inputElem = optElem.querySelector('input');
+            if (data[mobil] && myCar !== mobil) { optElem.classList.add('disabled'); inputElem.disabled = true; labelElem.innerText = `🚫 Dipakai`; } 
+            else { optElem.classList.remove('disabled'); inputElem.disabled = false; labelElem.innerText = `🚚 ${mobil}`; }
         });
 
-        // 📍 SETUP PETA MINI
-        const map = L.map('map', {zoomControl: false}).setView([-7.907354, 110.169152], 12); 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        let markers = {};
-        const iconMobil = L.divIcon({ className: 'emoji-icon', html: '🚚', iconSize: [20, 20] });
-
-        // VARIABEL STATE
-        let myCar = null;
-        let myName = "";
-        let myKloter = "";
-        let pendingRoutes = [];    
-        let completedRoutes = [];  
-        let watchId = null;
-        let potentialCheckins = {}; 
-        let reportedSessions = {};
-        let wakeLock = null;
-
-        // 🚀 WAKE LOCK
-        async function keepScreenAwake() {
-            try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    document.getElementById('wake-status').innerText = "🟢 GPS & Layar Aktif";
-                    document.getElementById('wake-status').style.color = "var(--success)";
-                }
-            } catch (err) { console.log("Wake Lock error:", err); }
-        }
-
-        // 🗣️ TEXT TO SPEECH
-        function speakNotification(text) {
-            if ('speechSynthesis' in window) {
-                const msg = new SpeechSynthesisUtterance(text);
-                msg.lang = 'id-ID'; window.speechSynthesis.speak(msg);
+        for(var name in markers) { map.removeLayer(markers[name]); }
+        markers = {};
+        
+        Object.values(data).forEach(driver => {
+            if(driver.lat && driver.lng) {
+                let displayLat = driver.lat, displayLng = driver.lng;
+                let distToBase = getDistanceFromLatLonInKm(driver.lat, driver.lng, SPPG_COORDS[0], SPPG_COORDS[1]);
+                if(distToBase <= 0.1) { displayLat = SPPG_COORDS[0]; displayLng = SPPG_COORDS[1]; }
+                markers[driver.nama] = L.marker([displayLat, displayLng], {icon: iconMobil}).bindTooltip(driver.nama, {permanent: true, direction: 'right', className: 'label-driver'}).addTo(map);
             }
-        }
-
-        // 🔄 CEK STATUS MOBIL AKTIF (Realtime)
-        database.ref('drivers').on('value', (snapshot) => {
-            const data = snapshot.val() || {};
-            
-            ['Mobil 1', 'Mobil 2'].forEach((mobil, idx) => {
-                let idNum = idx + 1;
-                let optElem = document.getElementById(`opt-mobil${idNum}`);
-                let labelElem = document.getElementById(`label-mobil${idNum}`);
-                let inputElem = optElem.querySelector('input');
-                
-                if (data[mobil] && myCar !== mobil) {
-                    optElem.classList.add('disabled');
-                    inputElem.disabled = true;
-                    labelElem.innerText = `🚫 Dipakai`;
-                } else {
-                    optElem.classList.remove('disabled');
-                    inputElem.disabled = false;
-                    labelElem.innerText = `🚚 ${mobil}`;
-                }
-            });
-
-            for(var name in markers) { map.removeLayer(markers[name]); }
-            markers = {};
-            Object.values(data).forEach(driver => {
-                if(driver.lat && driver.lng) {
-                    markers[driver.nama] = L.marker([driver.lat, driver.lng], {icon: iconMobil})
-                        .bindTooltip(driver.nama, {permanent: true, direction: 'right', className: 'emoji-icon'})
-                        .addTo(map);
-                }
-            });
         });
+    });
 
-        // 🚀 EKSEKUSI MULAI JALAN
-        function mulaiJalan() {
-            myName = document.getElementById('input-nama').value.trim();
-            myKloter = document.getElementById('input-kloter').value.trim();
-            
-            if(!myName || !myKloter) return Swal.fire('Error', 'Nama dan Kloter wajib diisi Bro!', 'error');
+    // Validasi dari form awal
+    function mulaiJalan() {
+        myName = document.getElementById('input-nama').value.trim();
+        myKloter = document.getElementById('input-kloter').value.trim();
+        if(!myName || !myKloter) return Swal.fire('Error', 'Nama dan Kloter wajib diisi!', 'error');
+        let selectedCarElem = document.querySelector('input[name="car_choice"]:checked');
+        if(!selectedCarElem) return Swal.fire('Error', 'Pilih armada dulu!', 'error');
+        myCar = selectedCarElem.value;
+        myRoute = [];
+        document.querySelectorAll('.chk-school:checked').forEach(el => myRoute.push(el.value));
+        if(myRoute.length === 0) return Swal.fire('Error', 'Pilih minimal 1 sekolah!', 'error');
 
-            let selectedCarElem = document.querySelector('input[name="car_choice"]:checked');
-            if(!selectedCarElem) return Swal.fire('Error', 'Pilih armada dulu!', 'error');
-            myCar = selectedCarElem.value;
+        // 💾 SIMPAN SESI KE MEMORI HP
+        localStorage.setItem('sppg_driver_session', JSON.stringify({myCar, myName, myKloter, myRoute}));
+        
+        mulaiTrackingSistem(true); // true = supir baru mulai
+    }
 
-            pendingRoutes = [];
-            completedRoutes = [];
-            document.querySelectorAll('.chk-school:checked').forEach(el => pendingRoutes.push(el.value));
-            if(pendingRoutes.length === 0) return Swal.fire('Error', 'Pilih minimal 1 rute sekolah!', 'error');
+    // Fungsi utama menjalankan UI & GPS (dipanggil saat mulai baru ATAU saat kerestart)
+    function mulaiTrackingSistem(isNewSession) {
+        document.getElementById('admin-panel').style.display = 'none';
+        document.getElementById('setup-panel').style.display = 'none';
+        document.getElementById('status-panel').style.display = 'block';
+        document.getElementById('active-nama').innerText = myName;
+        document.getElementById('active-kloter').innerText = `(${myKloter})`;
+        document.getElementById('active-mobil').innerText = myCar;
 
-            // Ganti UI ke Mode Tracking
-            document.getElementById('admin-panel').style.display = 'none';
-            document.getElementById('setup-panel').style.display = 'none';
-            document.getElementById('status-panel').style.display = 'block';
-            
-            // Set Data Kartu
-            document.getElementById('active-nama').innerText = myName.toUpperCase();
-            document.getElementById('active-kloter').innerText = `(${myKloter})`;
-            document.getElementById('active-mobil').innerText = myCar;
+        renderManifestList();
+        setTimeout(() => { map.invalidateSize(); }, 300);
+        keepScreenAwake();
+        
+        if (isNewSession) speakNotification("Sistem siap. Hati-hati di jalan, " + myName);
 
-            renderManifestList();
-            setTimeout(() => { map.invalidateSize(); }, 300); 
-
-            keepScreenAwake();
-            speakNotification("Sistem diaktifkan. Hati-hati di jalan, " + myName);
-
-            // ========================================================
-            // 📍 FITUR SPAWN POINT: TEMBAK KOORDINAT SPPG SEKARANG!
-            // ========================================================
-            const now = new Date();
-            const timeStr = now.getHours().toString().padStart(2,0) + ':' + now.getMinutes().toString().padStart(2,0);
-            
-            // Tembak titik SPPG Dapur langsung ke Firebase
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2,0) + ':' + now.getMinutes().toString().padStart(2,0);
+        
+        // Cuma force spawn SPPG kalau ini sesi beneran baru
+        if (isNewSession) {
             database.ref('drivers/' + myCar).update({
-                nama: myName, kloter: myKloter, lat: -7.907354, lng: 110.169152, updateTerakhir: timeStr, rute: pendingRoutes 
-            });
-
-            // Mulai Tracking GPS (akan mereplace titik SPPG ketika dapet sinyal)
-            if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(
-                    (position) => {
-                        let lat = position.coords.latitude;
-                        let lng = position.coords.longitude;
-                        document.getElementById('gps-status').innerText = `GPS Terkunci (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
-                        document.getElementById('gps-status').style.color = 'var(--success)';
-
-                        const now2 = new Date();
-                        const timeStr2 = now2.getHours().toString().padStart(2,0) + ':' + now2.getMinutes().toString().padStart(2,0);
-                        
-                        database.ref('drivers/' + myCar).update({
-                            nama: myName, kloter: myKloter, lat: lat, lng: lng, updateTerakhir: timeStr2, rute: pendingRoutes 
-                        });
-
-                        prosesGeofencingLokal(lat, lng);
-                    },
-                    (error) => { document.getElementById('gps-status').innerText = "Gagal akses GPS! Cek Izin."; },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-                );
-            }
-        }
-
-        // 📝 RENDER MANIFEST (LIST RUTE DINAMIS)
-        function renderManifestList() {
-            let pendingHtml = '';
-            pendingRoutes.forEach((sekolah, index) => {
-                pendingHtml += `
-                    <div class="task-item">
-                        <div class="task-item-left">
-                            <input type="checkbox" id="pend-${index}" onchange="tandaiSelesai('${sekolah}', true)">
-                            <label for="pend-${index}">${sekolah}</label>
-                        </div>
-                    </div>`;
-            });
-
-            let completedHtml = '';
-            completedRoutes.forEach((sekolah, index) => {
-                completedHtml += `
-                    <div class="task-item task-done">
-                        <div class="task-item-left">
-                            <input type="checkbox" id="comp-${index}" checked onchange="tandaiSelesai('${sekolah}', false)">
-                            <label for="comp-${index}">${sekolah}</label>
-                        </div>
-                    </div>`;
-            });
-
-            document.getElementById('pending-list').innerHTML = pendingHtml || '<div style="font-size:12px; color:#666; padding:10px;">Semua tugas selesai!</div>';
-            document.getElementById('completed-list').innerHTML = completedHtml || '<div style="font-size:12px; color:#666; padding:10px;">Belum ada yang diantar</div>';
-        }
-
-        // ✔️ TANDAI SELESAI
-        function tandaiSelesai(sekolahNama, isDone) {
-            if (isDone) {
-                pendingRoutes = pendingRoutes.filter(s => s !== sekolahNama);
-                completedRoutes.push(sekolahNama);
-            } else {
-                completedRoutes = completedRoutes.filter(s => s !== sekolahNama);
-                pendingRoutes.push(sekolahNama);
-            }
-            
-            renderManifestList();
-            database.ref('drivers/' + myCar).update({ rute: pendingRoutes });
-        }
-
-        // ⚠️ LAPOR KENDALA 
-        function laporKendala() {
-            Swal.fire({
-                title: 'Lapor Kendala Darurat',
-                input: 'text',
-                inputPlaceholder: 'Ketik masalah di sini...',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                confirmButtonText: 'Kirim Laporan',
-                background: '#1e293b',
-                color: '#fff'
-            }).then((result) => {
-                if (result.isConfirmed && result.value) {
-                    database.ref('drivers/' + myCar).update({ kendala: result.value });
-                    Swal.fire('Terkirim!', 'Admin sudah menerima peringatan.', 'success');
-                }
+                nama: myName, kloter: myKloter, lat: SPPG_COORDS[0], lng: SPPG_COORDS[1], updateTerakhir: timeStr, rute: myRoute 
             });
         }
 
-        // 🛑 BERHENTI TUGAS
-        function berhentiTugas() {
-            Swal.fire({
-                title: 'Akhiri Transmisi?', text: "Pelacakan akan dihentikan dan mobil dilepas.", icon: 'warning',
-                showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: 'Ya, Selesai',
-                background: '#1e293b', color: '#fff'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    if(watchId) navigator.geolocation.clearWatch(watchId);
-                    if(wakeLock) wakeLock.release();
-                    database.ref('drivers/' + myCar).remove(); 
-                    window.location.reload(); 
-                }
-            })
-        }
-
-        // 📍 LOGIKA GEOFENCING 
-        function prosesGeofencingLokal(lat, lng) {
-            pendingRoutes.forEach(namaSekolah => {
-                let sekolahData = sekolahList.find(s => s.nama === namaSekolah);
-                if(!sekolahData) return;
-
-                let dist = getDistanceFromLatLonInKm(lat, lng, sekolahData.lat, sekolahData.lng);
-                const sessionKey = `${myName}_${namaSekolah}`;
-                
-                if (dist <= 0.10) { 
-                    const now = new Date().getTime();
-                    if (reportedSessions[sessionKey] && (now - reportedSessions[sessionKey] < 3600000)) return; 
-
-                    if (!potentialCheckins[sessionKey]) {
-                        potentialCheckins[sessionKey] = now; 
-                    } else {
-                        const duration = now - potentialCheckins[sessionKey];
-                        if (duration > 90000) { 
-                            pushAutoReport(namaSekolah);
-                            reportedSessions[sessionKey] = now;
-                            delete potentialCheckins[sessionKey];
-                            
-                            speakNotification(`Anda telah sampai di ${namaSekolah}. Laporan otomatis terkirim.`);
-                            tandaiSelesai(namaSekolah, true);
-
-                            Swal.fire({
-                                toast: true, position: 'top', showConfirmButton: false, timer: 3000,
-                                icon: 'success', title: `Laporan ${namaSekolah} Terkirim!`
-                            });
-                        }
-                    }
-                } else {
-                    if (potentialCheckins[sessionKey]) delete potentialCheckins[sessionKey];
-                }
-            });
-        }
-
-        // 💾 PUSH KE EXCEL
-        function pushAutoReport(sekolahName) {
-            const today = new Date();
-            const dateStr = today.getDate().toString().padStart(2,0) + '/' + (today.getMonth()+1).toString().padStart(2,0) + '/' + today.getFullYear();
-            const timeStr = today.getHours().toString().padStart(2,0) + ':' + today.getMinutes().toString().padStart(2,0);
-            database.ref('reports').push({ driver: myName, sekolah: sekolahName, jam: timeStr + " (Auto)", tanggal: dateStr, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        }
-
-        // 🛠️ FUNGSI ADMIN
-        function hapusArmadaAktif() {
-            Swal.fire({ title: 'Akses Admin:', input: 'password', showCancelButton: true, background: '#1e293b', color: '#fff', preConfirm: (p) => { if(p!=="SPPGjaya") Swal.showValidationMessage('Salah!'); } })
-            .then((r) => { if(r.isConfirmed) { database.ref('drivers').remove(); Swal.fire('Terhapus!','','success'); } });
-        }
-        function downloadExcel() {
-            Swal.fire({ title: 'Akses Admin:', input: 'password', showCancelButton: true, background: '#1e293b', color: '#fff', preConfirm: (p) => { if(p!=="hallo Sayang") Swal.showValidationMessage('Salah!'); } })
-            .then((res) => {
-                if(res.isConfirmed) {
-                    database.ref('reports').once('value').then((snapshot) => {
-                        const reports = snapshot.val();
-                        if(!reports) return Swal.fire('Kosong','','info');
-                        let dataExcel = []; let no = 1;
-                        Object.values(reports).forEach(r => dataExcel.push({"No": no++, "Driver": r.driver, "Sekolah": r.sekolah, "Jam": r.jam, "Tanggal": r.tanggal}));
-                        XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(dataExcel), "Laporan"), "Laporan_SPPG.xlsx");
+        if (navigator.geolocation) {
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    let lat = position.coords.latitude;
+                    let lng = position.coords.longitude;
+                    document.getElementById('gps-status').innerText = `GPS Aktif (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+                    document.getElementById('gps-status').style.color = 'var(--success)';
+                    const now2 = new Date();
+                    const timeStr2 = now2.getHours().toString().padStart(2,0) + ':' + now2.getMinutes().toString().padStart(2,0);
+                    
+                    database.ref('drivers/' + myCar).update({
+                        nama: myName, kloter: myKloter, lat: lat, lng: lng, updateTerakhir: timeStr2, rute: myRoute 
                     });
-                }
-            });
+                    prosesGeofencingLokal(lat, lng);
+                },
+                (error) => { document.getElementById('gps-status').innerText = "Gagal akses GPS!"; },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
         }
+    }
 
-        function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
-            var R = 6371; var dLat = deg2rad(lat2-lat1); var dLon = deg2rad(lon2-lon1); 
-            var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); 
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    function renderManifestList() {
+        let manifestHtml = '';
+        myRoute.forEach((sekolah, i) => {
+            manifestHtml += `<div class="task-item"><input type="checkbox" id="task-${i}" onchange="updateSisaRute('${sekolah}', this.checked)"><label for="task-${i}">${sekolah}</label></div>`;
+        });
+        document.getElementById('active-manifest').innerHTML = manifestHtml || `<div style="font-size:12px; color:#666;">Semua rute telah selesai.</div>`;
+    }
+
+    function updateSisaRute(sekolahNama, isChecked) {
+        if(isChecked) {
+            myRoute = myRoute.filter(s => s !== sekolahNama);
+        } else {
+            if(!myRoute.includes(sekolahNama)) myRoute.push(sekolahNama);
         }
-        function deg2rad(deg) { return deg * (Math.PI/180); }
-    </script>
+        // 💾 PERBARUI SESI DI MEMORI HP SAAT RUTE BERKURANG
+        localStorage.setItem('sppg_driver_session', JSON.stringify({myCar, myName, myKloter, myRoute}));
+        database.ref('drivers/' + myCar).update({ rute: myRoute });
+        renderManifestList(); // Update tampilan daftar
+    }
+
+    function berhentiTugas() {
+        Swal.fire({ title: 'Akhiri Tugas?', text: "Mobil akan direset.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#c0392b', confirmButtonText: 'Ya, Selesai' })
+        .then((result) => {
+            if (result.isConfirmed) {
+                if(watchId) navigator.geolocation.clearWatch(watchId);
+                if(wakeLock) wakeLock.release();
+                
+                // 💾 HAPUS SESI DARI MEMORI HP
+                localStorage.removeItem('sppg_driver_session');
+                
+                database.ref('drivers/' + myCar).remove().then(() => { window.location.reload(); }); 
+            }
+        });
+    }
+
+    function prosesGeofencingLokal(lat, lng) {
+        myRoute.forEach(namaSekolah => {
+            let sekolahData = sekolahList.find(s => s.nama === namaSekolah);
+            if(!sekolahData) return;
+            let dist = getDistanceFromLatLonInKm(lat, lng, sekolahData.lat, sekolahData.lng);
+            const sessionKey = `${myName}_${namaSekolah}`;
+            
+            if (dist <= 0.10) { 
+                const now = new Date().getTime();
+                if (reportedSessions[sessionKey] && (now - reportedSessions[sessionKey] < 3600000)) return; 
+                if (!potentialCheckins[sessionKey]) { potentialCheckins[sessionKey] = now; } 
+                else {
+                    if (now - potentialCheckins[sessionKey] > 90000) { 
+                        pushAutoReport(namaSekolah);
+                        reportedSessions[sessionKey] = now;
+                        delete potentialCheckins[sessionKey];
+                        speakNotification(`Laporan otomatis terkirim. Anda telah sampai di ${namaSekolah}.`);
+                        Swal.fire({ toast: true, position: 'top', showConfirmButton: false, timer: 3000, icon: 'success', title: `Laporan ${namaSekolah} Terkirim!` });
+                        
+                        // Otomatis update rute & hapus dari list lokal
+                        updateSisaRute(namaSekolah, true);
+                    }
+                }
+            } else { if (potentialCheckins[sessionKey]) delete potentialCheckins[sessionKey]; }
+        });
+    }
+
+    function pushAutoReport(sekolahName) {
+        const today = new Date();
+        const dateStr = today.getDate().toString().padStart(2,0) + '/' + (today.getMonth()+1).toString().padStart(2,0) + '/' + today.getFullYear();
+        const timeStr = today.getHours().toString().padStart(2,0) + ':' + today.getMinutes().toString().padStart(2,0);
+        database.ref('reports').push({ driver: myName, sekolah: sekolahName, jam: timeStr + " (Auto)", tanggal: dateStr, timestamp: firebase.database.ServerValue.TIMESTAMP });
+    }
+
+    function hapusArmadaAktif() { Swal.fire({ title: 'Akses Admin:', input: 'password', showCancelButton: true, preConfirm: (p) => { if(p!=="SPPGjaya") Swal.showValidationMessage('Salah!'); } }).then((r) => { if(r.isConfirmed) { database.ref('drivers').remove(); Swal.fire('Terhapus!','','success'); } }); }
+    function downloadExcel() { Swal.fire({ title: 'Akses Admin:', input: 'password', showCancelButton: true, preConfirm: (p) => { if(p!=="hallo Sayang") Swal.showValidationMessage('Salah!'); } }).then((res) => { if(res.isConfirmed) { database.ref('reports').once('value').then((snapshot) => { const reports = snapshot.val(); if(!reports) return Swal.fire('Kosong','','info'); let dataExcel = []; let no = 1; Object.values(reports).forEach(r => dataExcel.push({"No": no++, "Driver": r.driver, "Sekolah": r.sekolah, "Jam": r.jam, "Tanggal": r.tanggal})); XLSX.writeFile(XLSX.utils.book_append_sheet(XLSX.utils.book_new(), XLSX.utils.json_to_sheet(dataExcel), "Laporan"), "Laporan_SPPG.xlsx"); }); } }); }
+
+    function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) { var R = 6371; var dLat = deg2rad(lat2-lat1); var dLon = deg2rad(lon2-lon1); var a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.sin(dLon/2) * Math.sin(dLon/2); return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); }
+    function deg2rad(deg) { return deg * (Math.PI/180); }
+</script>
 </body>
 </html>
