@@ -20,7 +20,6 @@
     <style>
         body { margin: 0; font-family: 'Fredoka', sans-serif; background-color: #fdfbf7; overflow: hidden; }
 
-        /* HEADER STYLE ASLI (KUNING) */
         .header {
             background-color: #FFC107; padding: 10px 20px; 
             display: flex; justify-content: space-between; align-items: center; 
@@ -28,10 +27,8 @@
         }
         .header h1 { margin: 0; font-size: 18px; color: #333; }
         
-        /* MAP AREA */
         #map { height: calc(100vh - 200px); width: 100%; z-index: 1; background: #ddd; }
         
-        /* SIDEBAR / BOTTOM PANEL */
         .info-panel {
             height: 200px; background: white; padding: 15px; box-sizing: border-box;
             border-top-left-radius: 20px; border-top-right-radius: 20px;
@@ -39,60 +36,38 @@
             position: fixed; bottom: 0; width: 100%; z-index: 1002;
         }
 
-        /* --- STYLE CARD ACCORDION (BIRU TERANG) --- */
         .driver-card {
-            background: #e3f2fd; 
-            border-radius: 12px; 
-            margin-bottom: 10px;
-            border-left: 5px solid #2196F3; 
-            position: relative;
-            overflow: hidden; 
-            transition: all 0.3s ease;
+            background: #e3f2fd; border-radius: 12px; margin-bottom: 10px;
+            border-left: 5px solid #2196F3; position: relative;
+            overflow: hidden; transition: all 0.3s ease;
         }
         
-        .driver-header {
-            padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-        }
+        .driver-header { padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .driver-header:hover { background-color: #bbdefb; }
 
         .arrow-indicator { font-size: 12px; color: #1565C0; transition: transform 0.3s ease; }
         
-        .driver-details-body {
-            max-height: 0; opacity: 0; overflow: hidden; background: #ffffff;
-            transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
-        }
-
+        .driver-details-body { max-height: 0; opacity: 0; overflow: hidden; background: #ffffff; transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease; }
         .driver-card.open .arrow-indicator { transform: rotate(180deg); }
-        .driver-card.open .driver-details-body {
-            max-height: 500px; opacity: 1; padding-bottom: 10px; border-top: 1px solid #bbdefb;
-        }
+        .driver-card.open .driver-details-body { max-height: 500px; opacity: 1; padding-bottom: 10px; border-top: 1px solid #bbdefb; }
 
         .sekolah-list { list-style: none; padding: 0; margin: 0; }
-        .sekolah-list li {
-            padding: 8px 15px; border-bottom: 1px solid #eee;
-            font-size: 11px; color: #555; display: flex; align-items: center; gap: 8px;
-        }
+        .sekolah-list li { padding: 8px 15px; border-bottom: 1px solid #eee; font-size: 11px; color: #555; display: flex; align-items: center; gap: 8px; }
         .sekolah-list li:last-child { border-bottom: none; }
 
-        .alert-kendala {
-            background: #ffebee; color: #c62828; padding: 5px; margin: 10px;
-            border-radius: 5px; font-size: 12px; border: 1px solid #ef5350; font-weight: bold;
-        }
-
-        .notif-badge {
-            position: absolute; top: 10px; right: 40px; background: #FF9800;
-            color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px;
-            display: none; animation: blink 1s infinite;
-        }
+        .alert-kendala { background: #ffebee; color: #c62828; padding: 5px; margin: 10px; border-radius: 5px; font-size: 12px; border: 1px solid #ef5350; font-weight: bold; }
+        .notif-badge { position: absolute; top: 10px; right: 40px; background: #FF9800; color: white; padding: 3px 8px; border-radius: 10px; font-size: 10px; display: none; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0.5; } }
         
-        .label-driver {
-            background: rgba(255, 255, 255, 0.9); border: 1px solid #333; 
-            border-radius: 4px; padding: 2px 5px; font-weight: bold; 
-            font-size: 10px; color: #000; box-shadow: 1px 1px 3px rgba(0,0,0,0.3); white-space: nowrap;
-        }
+        .label-driver { background: rgba(255, 255, 255, 0.9); border: 1px solid #333; border-radius: 4px; padding: 2px 5px; font-weight: bold; font-size: 10px; color: #000; box-shadow: 1px 1px 3px rgba(0,0,0,0.3); white-space: nowrap; }
         .emoji-icon { font-size: 24px; text-align: center; line-height: 1; text-shadow: 2px 2px 0px #fff; }
 
+        /* ========================================================= */
+        /* 🔥 FIX ANIMASI: TRANISI LINIER UNTUK GPS UPDATE 🔥 */
+        /* ========================================================= */
+        .car-marker {
+            transition: transform 1.5s linear !important; /* Disesuaikan dengan ritme ping GPS biar gak putus-putus */
+        }
     </style>
 </head>
 <body>
@@ -117,26 +92,19 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
     <script>
-        // 🔥 FIREBASE CONFIGURATION 🔥
         const firebaseConfig = {
-            apiKey: "AIzaSyAXnmhUbBBZv7as33EXqKMVhmWsv1s0S9Y",
-            authDomain: "sppg-tracker.firebaseapp.com",
+            apiKey: "AIzaSyAXnmhUbBBZv7as33EXqKMVhmWsv1s0S9Y", authDomain: "sppg-tracker.firebaseapp.com",
             databaseURL: "https://sppg-tracker-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "sppg-tracker",
-            storageBucket: "sppg-tracker.firebasestorage.app",
-            messagingSenderId: "583689454613",
-            appId: "1:583689454613:web:24e9441df31b9e3d5e3a1c"
+            projectId: "sppg-tracker", storageBucket: "sppg-tracker.firebasestorage.app",
+            messagingSenderId: "583689454613", appId: "1:583689454613:web:24e9441df31b9e3d5e3a1c"
         };
-
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
-        // 1. SETUP PETA & TITIK SPPG
         const SPPG_COORDS = [-7.907354, 110.169152];
         const map = L.map('map').setView(SPPG_COORDS, 13); 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // 2. DATA SEKOLAH
         const sekolahList = [
             { nama: "KB SADEWA CERME", lat: -7.8958782, lng: 110.1775952 }, { nama: "KB PREGIWATI", lat: -7.8847537, lng: 110.1663259 },
             { nama: "KB SADEWO", lat: -7.8958400, lng: 110.1774863 }, { nama: "KB BAYU SETO", lat: -7.8967954, lng: 110.1620361 },
@@ -163,134 +131,133 @@
          .bindTooltip("SPPG PANJATAN 002", {permanent:true, direction:'top', offset: [0, -20], className: 'label-driver'});
 
         let markers = {};
-        const iconMobil = L.divIcon({ className: 'emoji-icon', html: '🚚', iconSize: [35, 35] });
+        const iconMobil = L.divIcon({ className: 'emoji-icon car-marker', html: '🚚', iconSize: [35, 35] });
 
         let expandedDriver = null; 
 
-        // 3. LOGIC MONITORING UTAMA (REALTIME)
         database.ref('drivers').on('value', (snapshot) => {
             const data = snapshot.val();
             const listDiv = document.getElementById('listDriver');
             let htmlContent = ""; 
 
-            // HAPUS MOBIL HANTU
-            for(var name in markers) { map.removeLayer(markers[name]); }
-            markers = {}; 
+            if (!data) {
+                for(var name in markers) { map.removeLayer(markers[name]); }
+                markers = {};
+                listDiv.innerHTML = "<div style='text-align:center; color:#999; padding:20px;'>Belum ada armada aktif.</div>";
+                return;
+            }
 
-            if(data) {
-                // =============================================================
-                // FIX LOGIC: GUNAKAN KEY MOBIL (Mobil 1/Mobil 2) SEBAGAI IDENTITAS AMAN
-                // BUKAN LAGI MENGGUNAKAN NAMA SUPIR UNTUK ID DROPDOWN
-                // =============================================================
-                Object.entries(data).forEach(([carKey, driver]) => {
+            // Hapus marker yang mobilnya udah offline
+            for(var name in markers) {
+                if (!data[name]) { map.removeLayer(markers[name]); delete markers[name]; }
+            }
 
-                    let tujuanNext = (driver.rute && driver.rute.length > 0) ? driver.rute[0] : "Standby / Selesai";
-                    
-                    let isAtBase = false;
-                    let displayLat = driver.lat;
-                    let displayLng = driver.lng;
+            Object.entries(data).forEach(([carKey, driver]) => {
+                let tujuanNext = (driver.rute && driver.rute.length > 0) ? driver.rute[0] : "Standby / Selesai";
+                let isAtBase = false;
+                let displayLat = driver.lat;
+                let displayLng = driver.lng;
 
-                    // MAGNETIC SNAPPING DI SPPG
-                    if (driver.lat && driver.lng) {
-                        let distToBase = getDistanceFromLatLonInKm(driver.lat, driver.lng, SPPG_COORDS[0], SPPG_COORDS[1]);
-                        if (distToBase <= 0.1) { 
-                            isAtBase = true;
-                            tujuanNext = "Sedang Mengambil MBG 🍱"; 
-                            displayLat = SPPG_COORDS[0];
-                            displayLng = SPPG_COORDS[1];
-                        }
+                if (driver.lat && driver.lng) {
+                    let distToBase = getDistanceFromLatLonInKm(driver.lat, driver.lng, SPPG_COORDS[0], SPPG_COORDS[1]);
+                    if (distToBase <= 0.1) { 
+                        isAtBase = true;
+                        tujuanNext = "Sedang Mengambil MBG 🍱"; 
+                        displayLat = SPPG_COORDS[0];
+                        displayLng = SPPG_COORDS[1];
                     }
+                }
 
-                    let kendalaHTML = driver.kendala ? `<div class="alert-kendala">⚠️ KENDALA: ${driver.kendala}</div>` : "";
-                    
-                    let notifHTML = "";
-                    if (!isAtBase) {
-                        let targetSekolah = sekolahList.find(s => s.nama === tujuanNext);
-                        if (targetSekolah && displayLat) {
-                            const dist = getDistanceFromLatLonInKm(displayLat, displayLng, targetSekolah.lat, targetSekolah.lng);
-                            if (dist < 3) notifHTML = `<div class="notif-badge" style="display:block;">⏱️ 5 Menit Lagi!</div>`;
-                        }
+                let kendalaHTML = driver.kendala ? `<div class="alert-kendala">⚠️ KENDALA: ${driver.kendala}</div>` : "";
+                let notifHTML = "";
+                if (!isAtBase) {
+                    let targetSekolah = sekolahList.find(s => s.nama === tujuanNext);
+                    if (targetSekolah && displayLat) {
+                        const dist = getDistanceFromLatLonInKm(displayLat, displayLng, targetSekolah.lat, targetSekolah.lng);
+                        if (dist < 3) notifHTML = `<div class="notif-badge" style="display:block;">⏱️ 5 Menit Lagi!</div>`;
                     }
+                }
 
-                    let listMuatanHTML = `<li style="text-align:center; padding:10px;"><i>Semua pengantaran selesai</i></li>`;
-                    if (driver.rute && Array.isArray(driver.rute) && driver.rute.length > 0) {
-                        listMuatanHTML = driver.rute.map((sekolah, index) => {
-                            let statusIcon = (index === 0) ? "📍" : "📦"; 
-                            let style = (index === 0) ? "font-weight:bold; color:#1565C0;" : "";
-                            return `<li style="${style}">${statusIcon} ${sekolah}</li>`;
-                        }).join('');
-                    }
+                let listMuatanHTML = `<li style="text-align:center; padding:10px;"><i>Semua pengantaran selesai</i></li>`;
+                if (driver.rute && Array.isArray(driver.rute) && driver.rute.length > 0) {
+                    listMuatanHTML = driver.rute.map((sekolah, index) => {
+                        let statusIcon = (index === 0) ? "📍" : "📦"; 
+                        let style = (index === 0) ? "font-weight:bold; color:#1565C0;" : "";
+                        return `<li style="${style}">${index + 1}. ${statusIcon} ${sekolah}</li>`;
+                    }).join('');
+                }
 
-                    updateMarker(driver, tujuanNext, displayLat, displayLng);
+                // EKSEKUSI PEMBARUAN MARKER YANG OPTIMAL (ANTI LAG/PATAH-PATAH)
+                updateMarker(carKey, driver, tujuanNext, displayLat, displayLng);
 
-                    // =============================================================
-                    // ID AMAN (Bebas Spasi/Simbol)
-                    // =============================================================
-                    let safeId = carKey.replace(/\s/g, ''); // Menghasilkan "Mobil1" atau "Mobil2"
-                    let openClass = (expandedDriver === safeId) ? "open" : "";
-                    
-                    htmlContent += `
-                        <div class="driver-card ${openClass}" id="card-${safeId}">
-                            ${notifHTML}
-                            
-                            <div class="driver-header" onclick="toggleAccordion('${safeId}')">
-                                <div style="display:flex; align-items:center;">
-                                    <div style="font-size:24px; margin-right:10px;">🚚</div>
-                                    <div>
-                                        <b style="color:#1565C0;">${driver.nama}</b> <span style="font-size:11px; color:#555;">(${driver.kloter || '-'})</span><br>
-                                        <span style="font-size:12px;">Menuju: <b>${tujuanNext}</b></span>
-                                    </div>
-                                </div>
-                                <div style="text-align:right;">
-                                    <div style="font-size:10px; color:#888;">Update: ${driver.updateTerakhir || ''}</div>
-                                    <div class="arrow-indicator">▼</div>
+                let safeId = carKey.replace(/\s/g, ''); 
+                let openClass = (expandedDriver === safeId) ? "open" : "";
+                
+                htmlContent += `
+                    <div class="driver-card ${openClass}" id="card-${safeId}">
+                        ${notifHTML}
+                        <div class="driver-header" onclick="toggleAccordion('${safeId}')">
+                            <div style="display:flex; align-items:center;">
+                                <div style="font-size:24px; margin-right:10px;">🚚</div>
+                                <div>
+                                    <b style="color:#1565C0;">${driver.nama}</b> <span style="font-size:11px; color:#555;">(${driver.kloter || '-'})</span><br>
+                                    <span style="font-size:12px;">Menuju: <b>${tujuanNext}</b></span>
                                 </div>
                             </div>
-
-                            <div class="driver-details-body">
-                                <div style="background:#f1f8e9; padding:5px 15px; font-size:10px; color:#33691e; font-weight:bold;">
-                                    SISA PENGANTARAN (${carKey}):
-                                </div>
-                                <ul class="sekolah-list">
-                                    ${listMuatanHTML}
-                                </ul>
-                                ${kendalaHTML}
+                            <div style="text-align:right;">
+                                <div style="font-size:10px; color:#888;">Update: ${driver.updateTerakhir || ''}</div>
+                                <div class="arrow-indicator">▼</div>
                             </div>
                         </div>
-                    `;
-                });
-                
-                listDiv.innerHTML = htmlContent;
-
-            } else {
-                listDiv.innerHTML = "<div style='text-align:center; color:#999; padding:20px;'>Belum ada armada aktif.</div>";
-            }
+                        <div class="driver-details-body">
+                            <div style="background:#f1f8e9; padding:5px 15px; font-size:10px; color:#33691e; font-weight:bold;">
+                                URUTAN PENGANTARAN:
+                            </div>
+                            <ul class="sekolah-list">
+                                ${listMuatanHTML}
+                            </ul>
+                            ${kendalaHTML}
+                        </div>
+                    </div>
+                `;
+            });
+            listDiv.innerHTML = htmlContent;
         });
 
-        // 🔄 FUNGSI TOGGLE ACCORDION MENGGUNAKAN ID AMAN
         function toggleAccordion(safeId) {
-            if (expandedDriver === safeId) {
-                expandedDriver = null;
-            } else {
-                expandedDriver = safeId;
-            }
-
+            expandedDriver = (expandedDriver === safeId) ? null : safeId;
             const allCards = document.querySelectorAll('.driver-card');
             allCards.forEach(card => card.classList.remove('open'));
-            
             if (expandedDriver) {
                 const targetCard = document.getElementById('card-' + expandedDriver);
                 if (targetCard) targetCard.classList.add('open');
             }
         }
 
-        function updateMarker(driver, tujuanNext, finalLat, finalLng) {
+        // =========================================================
+        // 🔥 ALGORITMA ANTI-LAG & PATAH-PATAH PADA PETA 🔥
+        // =========================================================
+        function updateMarker(carKey, driver, tujuanNext, finalLat, finalLng) {
             let popupContent = `<b>${driver.nama}</b><br>Menuju: ${tujuanNext}`;
             
-            markers[driver.nama] = L.marker([finalLat, finalLng], {icon: iconMobil})
-                .bindPopup(popupContent)
-                .bindTooltip(driver.nama, { permanent: true, direction: 'right', className: 'label-driver' })
-                .addTo(map);
+            if (markers[carKey]) {
+                // 1. Geser kordinat (Ini yang dibaca CSS transition biar meluncur halus)
+                markers[carKey].setLatLng([finalLat, finalLng]);
+
+                // 2. CEGAH RE-RENDER TEKS KECUALI JIKA BERUBAH 
+                // (Ini yang bikin Mobil 2 kemaren berat dan ngelag parah)
+                if (markers[carKey].getPopup().getContent() !== popupContent) {
+                    markers[carKey].setPopupContent(popupContent);
+                }
+                if (markers[carKey].getTooltip().getContent() !== driver.nama) {
+                    markers[carKey].setTooltipContent(driver.nama);
+                }
+            } else {
+                markers[carKey] = L.marker([finalLat, finalLng], {icon: iconMobil})
+                    .bindPopup(popupContent)
+                    .bindTooltip(driver.nama, { permanent: true, direction: 'right', className: 'label-driver' })
+                    .addTo(map);
+            }
         }
 
         function getDistanceFromLatLonInKm(lat1,lon1,lat2,lon2) {
