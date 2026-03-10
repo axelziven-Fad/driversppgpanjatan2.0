@@ -2,7 +2,6 @@
 <html lang="id">
 <head>
     <script>
-    // 🛡️ SECURITY SYSTEM
     document.addEventListener('contextmenu', event => event.preventDefault());
     document.onkeydown = function(e) {
         if (e.keyCode == 123) return false; 
@@ -12,14 +11,18 @@
     </script>
     <title>Driver App - SPPG Panjatan</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
     <style>
         :root { --primary: #1565C0; --success: #27ae60; --danger: #c0392b; --bg: #fdfbf7; --text-main: #333; --text-muted: #666; }
         body { margin: 0; font-family: 'Fredoka', sans-serif; background-color: #e0e0e0; display: flex; justify-content: center; color: var(--text-main); }
-        .app-container { width: 100%; max-width: 480px; background-color: var(--bg); min-height: 100vh; position: relative; overflow-x: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+        .app-container { width: 100%; max-width: 480px; background-color: var(--bg); min-height: 100vh; position: relative; overflow-x: hidden; box-shadow: 0 0 20px rgba(0,0,0,0.1); padding-bottom: 20px; }
         .header { background-color: #FFC107; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10; position: relative; }
         .header h1 { margin: 0; font-size: 18px; color: #333; }
         .content-wrap { padding: 15px; }
@@ -34,22 +37,31 @@
         .car-option span { display: flex; align-items: center; justify-content: center; gap: 5px; padding: 12px; background: #f5f5f5; border: 2px solid #e0e0e0; border-radius: 12px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: 0.2s; }
         .car-option input:checked + span { background: #e3f2fd; border-color: var(--primary); color: var(--primary); }
         .car-option.disabled span { opacity: 0.5; cursor: not-allowed; }
+        
         .school-grid { display: grid; grid-template-columns: 1fr; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
         .school-item { display: flex; align-items: center; padding: 10px; background: #f8f9fa; border-radius: 10px; border: 1px solid #eee; cursor: pointer; }
         .school-item input { width: 18px; height: 18px; accent-color: var(--primary); margin-right: 10px; }
         .school-item span { font-size: 13px; font-weight: 500; }
+        
+        /* STYLE DRAG AND DROP */
+        .sortable-list { list-style: none; padding: 0; margin: 0; }
+        .sortable-item { 
+            display: flex; align-items: center; padding: 12px; background: white; 
+            border: 1px solid #1565C0; border-left: 5px solid #1565C0;
+            border-radius: 8px; margin-bottom: 8px; font-size: 13px; font-weight: 500; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .drag-handle { cursor: grab; font-size: 18px; margin-right: 15px; color: #aaa; }
+        .drag-handle:active { cursor: grabbing; }
+
         .btn-start { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; font-family: inherit; cursor: pointer; box-shadow: 0 4px 10px rgba(21, 101, 192, 0.3); transition: 0.2s; }
         .btn-start:active { transform: scale(0.98); }
         .admin-flex { display: flex; gap: 10px; margin-bottom: 10px; }
         .btn-admin { flex: 1; padding: 10px; border: none; border-radius: 8px; font-family: inherit; font-weight: 600; font-size: 12px; cursor: pointer; color: white; }
+        
         #status-panel { display: none; }
         .driver-card { background: #e3f2fd; border-radius: 12px; padding: 15px; margin-bottom: 15px; border-left: 5px solid var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .task-list { margin-top: 15px; border-top: 1px dashed #bbdefb; padding-top: 15px; }
-        .task-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 8px; margin-bottom: 8px; border: 1px solid #e3f2fd; }
-        .task-item input { width: 18px; height: 18px; accent-color: var(--success); margin-right: 12px; }
-        .task-item label { font-size: 13px; font-weight: 500; width: 100%; }
-        .task-item:has(input:checked) { opacity: 0.5; background: #f1f5f9; }
-        .task-item:has(input:checked) label { text-decoration: line-through; color: var(--text-muted); }
+        
         #map { height: 220px; border-radius: 12px; z-index: 1; border: 2px solid #eee; }
         .emoji-icon { font-size: 20px; text-align: center; line-height: 1; text-shadow: 1px 1px 0 #fff; }
         .label-driver { background: rgba(255, 255, 255, 0.9); border: 1px solid #333; border-radius: 4px; padding: 2px 5px; font-weight: bold; font-size: 10px; color: #000; white-space: nowrap; }
@@ -65,12 +77,14 @@
             <button class="btn-admin" style="background:var(--success);" onclick="downloadExcel()">📊 Tarik Excel</button>
             <button class="btn-admin" style="background:var(--danger);" onclick="hapusArmadaAktif()">🗑️ Reset Data</button>
         </div>
+
         <div id="setup-panel">
             <div class="glass-card">
                 <div class="section-title">1. Identitas Supir</div>
                 <div class="input-group"><label>Nama Anda</label><input type="text" id="input-nama" placeholder="Contoh: Arya" autocomplete="off"></div>
                 <div class="input-group"><label>Kloter Pengiriman</label><input type="text" id="input-kloter" placeholder="Contoh: Kloter 1" autocomplete="off"></div>
             </div>
+            
             <div class="glass-card">
                 <div class="section-title">2. Pilih Armada</div>
                 <div class="car-grid">
@@ -78,12 +92,20 @@
                     <label class="car-option" id="opt-mobil2"><input type="radio" name="car_choice" value="Mobil 2"><span id="label-mobil2">🚚 Mobil 2</span></label>
                 </div>
             </div>
+            
             <div class="glass-card">
-                <div class="section-title">3. Rute Sekolah (Manifest)</div>
+                <div class="section-title">3. Pilih Sekolah</div>
                 <div class="school-grid" id="school-selector"></div>
+                
+                <div class="section-title" style="margin-top: 20px; color:#27ae60;">4. Urutan Jalan (Geser ☰)</div>
+                <ul id="setup-route-list" class="sortable-list">
+                    <div style="font-size:11px; color:#999; text-align:center; padding:10px;">Centang sekolah di atas dulu...</div>
+                </ul>
             </div>
+            
             <button class="btn-start" onclick="mulaiJalan()">🚀 Mulai Bertugas</button>
         </div>
+
         <div id="status-panel">
             <div class="driver-card">
                 <div style="display:flex; align-items:center;">
@@ -91,8 +113,11 @@
                     <div><b style="color:var(--primary); font-size:16px;" id="active-nama">Nama</b> <span style="font-size:12px; color:var(--text-muted);" id="active-kloter">(Kloter)</span><br><span style="font-size:13px;">Armada: <b id="active-mobil">Mobil</b></span></div>
                 </div>
                 <div style="margin-top: 10px; font-size: 11px; color: var(--danger); font-weight: bold;" id="gps-status">Mencari sinyal GPS...</div>
-                <div class="task-list" id="active-manifest"></div>
+                
+                <div style="margin-top:15px; font-size:11px; color:#1565C0; font-weight:bold;">SISA PENGANTARAN (Bisa digeser ☰):</div>
+                <ul id="active-manifest" class="sortable-list" style="margin-top: 5px;"></ul>
             </div>
+            
             <div class="glass-card" style="padding: 10px;">
                 <div class="section-title" style="margin: 5px 10px;">🗺️ Radar Map</div>
                 <div id="map"></div>
@@ -121,31 +146,50 @@
     ];
 
     const schoolContainer = document.getElementById('school-selector');
-    sekolahList.forEach(s => { schoolContainer.innerHTML += `<label class="school-item"><input type="checkbox" value="${s.nama}" class="chk-school"><span>${s.nama}</span></label>`; });
+    const setupRouteList = document.getElementById('setup-route-list');
+    
+    // Inisialisasi Drag n Drop di Setup Panel
+    Sortable.create(setupRouteList, { animation: 150 });
+
+    // Logic saat checkbox sekolah dicentang
+    sekolahList.forEach(s => { 
+        let html = `<label class="school-item"><input type="checkbox" value="${s.nama}" class="chk-school"><span>${s.nama}</span></label>`; 
+        schoolContainer.innerHTML += html; 
+    });
+
+    document.querySelectorAll('.chk-school').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+            if(e.target.checked) {
+                // Hapus tulisan placeholder jika ada
+                if(setupRouteList.innerHTML.includes('Centang sekolah')) setupRouteList.innerHTML = '';
+                
+                setupRouteList.innerHTML += `<li class="sortable-item" data-nama="${e.target.value}"><span class="drag-handle">☰</span> ${e.target.value}</li>`;
+            } else {
+                const li = setupRouteList.querySelector(`li[data-nama="${e.target.value}"]`);
+                if(li) li.remove();
+                
+                if(setupRouteList.children.length === 0) {
+                    setupRouteList.innerHTML = `<div style="font-size:11px; color:#999; text-align:center; padding:10px;">Centang sekolah di atas dulu...</div>`;
+                }
+            }
+        });
+    });
 
     const map = L.map('map', {zoomControl: false}).setView(SPPG_COORDS, 13); 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
     let markers = {};
-    const iconMobil = L.divIcon({ className: 'emoji-icon', html: '🚚', iconSize: [20, 20] });
+    const iconMobil = L.divIcon({ className: 'emoji-icon car-marker', html: '🚚', iconSize: [20, 20] }); // Add car-marker for smooth animation
 
-    let myCar = null, myName = "", myKloter = "", myRoute = [], watchId = null, potentialCheckins = {}, reportedSessions = {}, wakeLock = null;
+    let myCar = null, myName = "", myKloter = "", pendingRoutes = [], watchId = null, potentialCheckins = {}, reportedSessions = {}, wakeLock = null;
 
     async function keepScreenAwake() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
     function speakNotification(text) { if ('speechSynthesis' in window) { const msg = new SpeechSynthesisUtterance(text); msg.lang = 'id-ID'; window.speechSynthesis.speak(msg); } }
 
-    // =========================================================
-    // 💾 AUTO RESUME (MENCEGAH HILANG SAAT REFRESH/MINIMIZE)
-    // =========================================================
     window.onload = () => {
         let savedSession = localStorage.getItem('sppg_driver_session');
         if (savedSession) {
             let data = JSON.parse(savedSession);
-            myCar = data.myCar;
-            myName = data.myName;
-            myKloter = data.myKloter;
-            myRoute = data.myRoute;
-
-            // Langsung eksekusi tracking tanpa ngisi form lagi (isNew = false)
+            myCar = data.myCar; myName = data.myName; myKloter = data.myKloter; pendingRoutes = data.pendingRoutes;
             mulaiTrackingSistem(false); 
         }
     };
@@ -171,25 +215,28 @@
         });
     });
 
-    // Validasi dari form awal
     function mulaiJalan() {
         myName = document.getElementById('input-nama').value.trim();
         myKloter = document.getElementById('input-kloter').value.trim();
         if(!myName || !myKloter) return Swal.fire('Error', 'Nama dan Kloter wajib diisi!', 'error');
+        
         let selectedCarElem = document.querySelector('input[name="car_choice"]:checked');
         if(!selectedCarElem) return Swal.fire('Error', 'Pilih armada dulu!', 'error');
         myCar = selectedCarElem.value;
-        myRoute = [];
-        document.querySelectorAll('.chk-school:checked').forEach(el => myRoute.push(el.value));
-        if(myRoute.length === 0) return Swal.fire('Error', 'Pilih minimal 1 sekolah!', 'error');
 
-        // 💾 SIMPAN SESI KE MEMORI HP
-        localStorage.setItem('sppg_driver_session', JSON.stringify({myCar, myName, myKloter, myRoute}));
-        
-        mulaiTrackingSistem(true); // true = supir baru mulai
+        // BACA URUTAN LANGSUNG DARI HASIL DRAG & DROP (setupRouteList)
+        pendingRoutes = Array.from(setupRouteList.children)
+                             .filter(li => li.hasAttribute('data-nama'))
+                             .map(li => li.getAttribute('data-nama'));
+                             
+        if(pendingRoutes.length === 0) return Swal.fire('Error', 'Pilih minimal 1 sekolah!', 'error');
+
+        localStorage.setItem('sppg_driver_session', JSON.stringify({myCar, myName, myKloter, pendingRoutes}));
+        mulaiTrackingSistem(true); 
     }
 
-    // Fungsi utama menjalankan UI & GPS (dipanggil saat mulai baru ATAU saat kerestart)
+    let activeSortable; // Instance drag and drop untuk saat jalan
+
     function mulaiTrackingSistem(isNewSession) {
         document.getElementById('admin-panel').style.display = 'none';
         document.getElementById('setup-panel').style.display = 'none';
@@ -207,10 +254,9 @@
         const now = new Date();
         const timeStr = now.getHours().toString().padStart(2,0) + ':' + now.getMinutes().toString().padStart(2,0);
         
-        // Cuma force spawn SPPG kalau ini sesi beneran baru
         if (isNewSession) {
             database.ref('drivers/' + myCar).update({
-                nama: myName, kloter: myKloter, lat: SPPG_COORDS[0], lng: SPPG_COORDS[1], updateTerakhir: timeStr, rute: myRoute 
+                nama: myName, kloter: myKloter, lat: SPPG_COORDS[0], lng: SPPG_COORDS[1], updateTerakhir: timeStr, rute: pendingRoutes 
             });
         }
 
@@ -225,7 +271,7 @@
                     const timeStr2 = now2.getHours().toString().padStart(2,0) + ':' + now2.getMinutes().toString().padStart(2,0);
                     
                     database.ref('drivers/' + myCar).update({
-                        nama: myName, kloter: myKloter, lat: lat, lng: lng, updateTerakhir: timeStr2, rute: myRoute 
+                        nama: myName, kloter: myKloter, lat: lat, lng: lng, updateTerakhir: timeStr2, rute: pendingRoutes 
                     });
                     prosesGeofencingLokal(lat, lng);
                 },
@@ -236,23 +282,45 @@
     }
 
     function renderManifestList() {
-        let manifestHtml = '';
-        myRoute.forEach((sekolah, i) => {
-            manifestHtml += `<div class="task-item"><input type="checkbox" id="task-${i}" onchange="updateSisaRute('${sekolah}', this.checked)"><label for="task-${i}">${sekolah}</label></div>`;
+        const manifestContainer = document.getElementById('active-manifest');
+        manifestContainer.innerHTML = '';
+        
+        if(pendingRoutes.length === 0) {
+            manifestContainer.innerHTML = `<div style="font-size:12px; color:#666;">Semua rute telah selesai.</div>`;
+            return;
+        }
+
+        pendingRoutes.forEach((sekolah, i) => {
+            manifestContainer.innerHTML += `
+                <li class="sortable-item" data-nama="${sekolah}">
+                    <span class="drag-handle">☰</span>
+                    <input type="checkbox" id="task-${i}" onchange="selesaikanRute('${sekolah}')" style="margin-right:10px; accent-color:#27ae60;">
+                    <label for="task-${i}">${sekolah}</label>
+                </li>
+            `;
         });
-        document.getElementById('active-manifest').innerHTML = manifestHtml || `<div style="font-size:12px; color:#666;">Semua rute telah selesai.</div>`;
+
+        // INISIALISASI DRAG AND DROP SAAT JALAN
+        if(activeSortable) activeSortable.destroy();
+        activeSortable = Sortable.create(manifestContainer, {
+            animation: 150,
+            handle: '.drag-handle',
+            onEnd: function () {
+                // Baca urutan baru dari HTML setelah di drag
+                pendingRoutes = Array.from(manifestContainer.children).map(li => li.getAttribute('data-nama'));
+                
+                // Update ke Firebase & Local Storage Detik Itu Juga!
+                database.ref('drivers/' + myCar).update({ rute: pendingRoutes });
+                localStorage.setItem('sppg_driver_session', JSON.stringify({myCar, myName, myKloter, pendingRoutes}));
+            }
+        });
     }
 
-    function updateSisaRute(sekolahNama, isChecked) {
-        if(isChecked) {
-            myRoute = myRoute.filter(s => s !== sekolahNama);
-        } else {
-            if(!myRoute.includes(sekolahNama)) myRoute.push(sekolahNama);
-        }
-        // 💾 PERBARUI SESI DI MEMORI HP SAAT RUTE BERKURANG
-        localStorage.setItem('sppg_driver_session', JSON.stringify({myCar, myName, myKloter, myRoute}));
-        database.ref('drivers/' + myCar).update({ rute: myRoute });
-        renderManifestList(); // Update tampilan daftar
+    function selesaikanRute(sekolahNama) {
+        pendingRoutes = pendingRoutes.filter(s => s !== sekolahNama);
+        localStorage.setItem('sppg_driver_session', JSON.stringify({myCar, myName, myKloter, pendingRoutes}));
+        database.ref('drivers/' + myCar).update({ rute: pendingRoutes });
+        renderManifestList(); 
     }
 
     function berhentiTugas() {
@@ -261,17 +329,14 @@
             if (result.isConfirmed) {
                 if(watchId) navigator.geolocation.clearWatch(watchId);
                 if(wakeLock) wakeLock.release();
-                
-                // 💾 HAPUS SESI DARI MEMORI HP
                 localStorage.removeItem('sppg_driver_session');
-                
                 database.ref('drivers/' + myCar).remove().then(() => { window.location.reload(); }); 
             }
         });
     }
 
     function prosesGeofencingLokal(lat, lng) {
-        myRoute.forEach(namaSekolah => {
+        pendingRoutes.forEach(namaSekolah => {
             let sekolahData = sekolahList.find(s => s.nama === namaSekolah);
             if(!sekolahData) return;
             let dist = getDistanceFromLatLonInKm(lat, lng, sekolahData.lat, sekolahData.lng);
@@ -289,8 +354,7 @@
                         speakNotification(`Laporan otomatis terkirim. Anda telah sampai di ${namaSekolah}.`);
                         Swal.fire({ toast: true, position: 'top', showConfirmButton: false, timer: 3000, icon: 'success', title: `Laporan ${namaSekolah} Terkirim!` });
                         
-                        // Otomatis update rute & hapus dari list lokal
-                        updateSisaRute(namaSekolah, true);
+                        selesaikanRute(namaSekolah);
                     }
                 }
             } else { if (potentialCheckins[sessionKey]) delete potentialCheckins[sessionKey]; }
